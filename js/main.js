@@ -59,10 +59,12 @@ require([
                 arcgisUtils.createMap(webMapID, "mapDiv").then(function(response) {
                     app.map = response.map;
                     app.operationalLayers = _getWebMapOperationalLayers(response);
-                    // connect.disconnect(response.clickEventHandle);
 
                     _addExtentChangeEventHandlerToMap(app.map);
                     _getWildfireDataByMapExent(app.map.extent, populateArrayChartForWildfires);
+                    _queryWildfireData(function(fullListOfWildfires){
+                        addSearchInputOnTypeEventHandler(fullListOfWildfires);
+                    })
                 });
             }
 
@@ -102,19 +104,51 @@ require([
 
             function _getWildfireDataByMapExent(extent, callback){
                 let requestURL = REQUEST_URL_WILDFIRE_ACTIVITY;
-                let extentJSON = extent.toJson();
-                let whereClauseForAffectedArea = _getWhereClauseForAffectedArea();
+                let extentJSON = JSON.stringify(extent.toJson());
+                let whereClause = "PER_CONT < 100 AND " + _getWhereClauseForAffectedArea();
 
+                _queryWildfireData(callback, whereClause, extentJSON);
+
+                // var wildfireDataRequest = esriRequest({
+                //     url: requestURL,
+                //     content: {
+                //         f: "json",
+                //         outFields: "*",
+                //         where: "PER_CONT < 100 AND " + whereClauseForAffectedArea,
+                //         geometry: JSON.stringify(extentJSON),
+                //         geometryType: "esriGeometryEnvelope",
+                //         returnGeometry: true,
+                //     },
+                //     handleAs: "json",
+                //     callbackParamName: "callback"
+                // });
+
+                // function requestSuccessHandler(response) {
+                //     callback(response.features);
+                // }
+        
+                // function requestErrorHandler(error) {
+                //     console.log("Error: ", error.message);
+                // }
+        
+                // wildfireDataRequest.then(requestSuccessHandler, requestErrorHandler);
+        
+            }
+
+            function _queryWildfireData(callback, whereClause, searchExtent){
+                var params = {
+                    f: "json",
+                    outFields: "*",
+                    where: whereClause || "PER_CONT < 100",
+                    returnGeometry: false
+                };
+                if(searchExtent){
+                    params.geometry = searchExtent;
+                    params.geometryType = "esriGeometryEnvelope";
+                }
                 var wildfireDataRequest = esriRequest({
-                    url: requestURL,
-                    content: {
-                        f: "json",
-                        outFields: "*",
-                        where: "PER_CONT < 100 AND " + whereClauseForAffectedArea,
-                        geometry: JSON.stringify(extentJSON),
-                        geometryType: "esriGeometryEnvelope",
-                        returnGeometry: true,
-                    },
+                    url: REQUEST_URL_WILDFIRE_ACTIVITY,
+                    content: params,
                     handleAs: "json",
                     callbackParamName: "callback"
                 });
@@ -128,7 +162,6 @@ require([
                 }
         
                 wildfireDataRequest.then(requestSuccessHandler, requestErrorHandler);
-        
             }
 
             function _getWebMapOperationalLayers(response){
@@ -147,7 +180,7 @@ require([
         
                 new arcgisPortal.Portal(info.portalUrl).signIn()
                 .then(function(portalUser){
-                    console.log("Signed in to the portal: ", portalUser);
+                    // console.log("Signed in to the portal: ", portalUser);
                 })     
                 .otherwise(
                     function (error){
@@ -193,7 +226,7 @@ require([
                 var selectedFeature = wildfireData[itemIdx];
                 var selectedFeatureGeom = new Point( {"x": selectedFeature.attributes.LONGITUDE, "y": selectedFeature.attributes.LATITUDE, "spatialReference": {"wkid": 4326 } });
 
-                console.log(selectedFeature);
+                // console.log(selectedFeature);
                 // // console.log(wildFireVizAp.map.infoWindow);
 
                 var contentHtmlStr = `
@@ -214,6 +247,22 @@ require([
                 wildFireVizAp.map.infoWindow.hide();
             });
 
+        }
+
+        function addSearchInputOnTypeEventHandler(arrOfAllWildfires){
+            
+            var arrOfWildfireNames = arrOfAllWildfires.map(function(d){
+                return d.attributes.FIRE_NAME;
+            });
+            
+            $('.fire-name-search-input').on( "keydown", function(evt){
+                let currentText = $(this).val();
+                if(currentText.length >= 3){
+                    console.log(currentText);
+                }
+            }); 
+
+            console.log(arrOfWildfireNames);
         }
 
         function affectedAreaFilterOnClickHandler(evt){

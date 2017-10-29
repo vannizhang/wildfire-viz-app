@@ -19,6 +19,16 @@
     color: #B77600;
 }
 
+.inputs-container .hDivider {
+    height: 1px;
+    width: 100%;
+    background-color: #670043;
+}
+
+.inputs-container label {
+    margin: 0 0 .8rem 0;
+}
+
 .fire-name-search-input{
     background-color: rgba(26, 0, 17, 1);
     border: 1px solid #B77600;
