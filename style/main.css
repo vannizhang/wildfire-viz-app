@@ -1,0 +1,98 @@
+ html, body, #mapDiv {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    color: #444;
+    overflow: hidden;
+}
+
+.side-bar {
+    position: absolute;
+    width: 425px;
+    height: 100%;
+    top: 0;
+    right: 0;
+    z-index: 1000;
+    background-color: rgba(26, 0, 17, 0.7);
+    overflow: auto;
+    color: #B77600;
+}
+
+.fire-name-search-input{
+    background-color: rgba(26, 0, 17, 1);
+    border: 1px solid #B77600;
+    color: #B77600;
+}
+
+.fire-name-search-input:focus {
+    border-color: #B77600;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.075), 0 0 5px #B77600
+}
+
+.fire-name-search-input::-webkit-input-placeholder { /* Chrome/Opera/Safari */
+    color: #B77600;
+}
+.fire-name-search-input::-moz-placeholder { /* Firefox 19+ */
+    color: #B77600;
+}
+.fire-name-search-input:-ms-input-placeholder { /* IE 10+ */
+    color: #B77600;
+}
+.fire-name-search-input:-moz-placeholder { /* Firefox 18- */
+    color: #B77600;
+}
+
+.panel-no-background {
+    background-color: rgba(0,0,0,0);
+}
+
+.suggestion-list-container {
+    position: absolute;
+    width: 100%;
+    top: 39px;
+}
+
+.suggestion-list-container > div {
+    margin: 5px;
+}
+
+.suggestion-list-container > div:hover {
+    background-color: #e0e0e0;
+} 
+
+.affected-area-filter{
+    display: flex;
+    align-items: center;
+}
+
+.legend-icon {
+    display: inline-block;
+    height: 50px;
+    width: 50px;
+    background: url("../img/FireSymbol.png") no-repeat center; 
+}
+
+.legend-icon.legend-class-1 {
+    background-size: 100%;
+}
+
+.legend-icon.legend-class-2 {
+    background-size: 80%;
+}
+
+.legend-icon.legend-class-3 {
+    background-size: 60%;
+}
+
+.legend-icon.legend-class-4 {
+    background-size: 40%;
+}
+
+.legend-grid .legend-icon {
+    border: solid 1px rgba(0,0,0,0);
+}
+
+.legend-grid .legend-icon:hover {
+    border: solid 1px #B77600;
+}

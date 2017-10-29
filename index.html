@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <meta name="viewport" content="initial-scale=1, maximum-scale=1, width=device-width, user-scalable=no"/>
+        <title>USA Wildfire Activity</title>
+        <link rel="icon" href="//www.esri.com/favicon.ico">
+        <link rel="stylesheet" href="./style/calcite-web.min.css">
+        <link rel="stylesheet" href="https://js.arcgis.com/3.21/esri/css/esri.css">
+        <link rel="stylesheet" href="./style/main.css">
+        <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet"> 
+
+        <script>
+            var locationPath = location.origin + location.pathname.replace(/\/[^/]+$/, '');
+            var dojoConfig = {
+                parseOnLoad: true,
+                packages: [
+                    {
+                        "name": "app_modules",
+                        "location": locationPath + '/js/modules'
+                    },
+                    {
+                        "name": "configs",
+                        "location": locationPath + '/js/configs'
+                    },                
+                ]
+            };
+        </script>   
+    </head>
+
+    <body>
+
+        <div id="mapDiv">
+            <div class='side-bar'>
+                <div class='inputs-container panel panel-no-border panel-no-background'>
+                    <label>
+                        <input type="text" placeholder="Search by fire name..." class="modifier-class fire-name-search-input" required>
+                        <div class='panel panel-no-border panel-no-padding suggestion-list-container hide'>
+                            <div>foobar</div>
+                            <div>foobar</div>
+                            <div>foobar</div>
+                        </div>
+                    </label>
+                    <div class="block-group block-group-4-up">
+                        <div class="block affected-area-filter">
+                            <span class="legend-icon legend-class-1"></span>
+                            <span class="font-size--3"><i class="fa fa-check-square-o fa-lg" aria-hidden="true"></i></span>
+                        </div>
+                        <div class="block affected-area-filter">
+                            <span class="legend-icon legend-class-2"></span>
+                            <span class="font-size--3"><i class="fa fa-check-square-o fa-lg" aria-hidden="true"></i></span>
+                        </div>
+                        <div class="block affected-area-filter">
+                            <span class="legend-icon legend-class-3"></span>
+                            <span class="font-size--3"><i class="fa fa-check-square-o fa-lg" aria-hidden="true"></i></span>
+                        </div>
+                        <div class="block affected-area-filter">
+                            <span class="legend-icon legend-class-4"></span>
+                            <span class="font-size--3"><i class="fa fa-check-square-o fa-lg" aria-hidden="true"></i></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class='legend-container panel panel-no-border panel-no-background'>
+                    <div class="legend-grid block-group block-group-6-up">
+                        <!-- <div class="legend-grid-item block trailer-half"><div class="legend-icon legend-class-1"></div></div> -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+
+        <script src="./js/jquery-3.2.1.min.js"></script>
+        <script src="./js/d3.v4.min.js"></script>
+        <script src="./js/calcite-web.min.js"></script> 
+        <script src="https://js.arcgis.com/3.21/"></script>
+        <script src="./js/main.js"></script>
+
+        <script>
+            calcite.init();
+        </script>
+    </body>
+</html>
