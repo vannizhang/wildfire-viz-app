@@ -21,7 +21,7 @@ require([
         // App Config Data
         const WEB_MAP_ID = "4b420a6ceb0e4addb021d5a8bf02f251";
         const REQUEST_URL_WILDFIRE_ACTIVITY = "https://livefeeds.arcgis.com/arcgis/rest/services/LiveFeeds/Wildfire_Activity/MapServer/0/query";
-        const OAUTH_APP_ID = "nAmDF8jvzSH6EK9T";
+        const OAUTH_APP_ID = "5LTx4lRbinywSMvI";
         const AFFECTED_AREA_FIELD_NAME = 'AREA_';
                 
         //initialize app
