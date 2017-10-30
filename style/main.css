@@ -64,11 +64,13 @@
 }
 
 .suggestion-list-container > div {
-    margin: 5px;
+    padding: 5px;
+    background-color: rgba(26, 0, 17, .9);
 }
 
 .suggestion-list-container > div:hover {
-    background-color: #e0e0e0;
+    background-color: #B77600;
+    color: white;
 } 
 
 .affected-area-filter{

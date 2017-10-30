@@ -55,13 +55,25 @@ require([
                 _setLayerDefinitionsForWildfireLayer(affectedAreaWhereClause);
             }
 
+            this.searchWildfireByName = function(name){
+                let whereClause = "PER_CONT < 100 AND FIRE_NAME = '" + name + "'";
+                _queryWildfireData(populateArrayChartForWildfires, whereClause);
+            }
+
+            this.searchWilfireByExtent = function(extent){
+                extent = extent || this.map.extent;
+                let extentJSON = JSON.stringify(extent.toJson());
+                let whereClause = "PER_CONT < 100 AND " + _getWhereClauseForAffectedArea();
+                _queryWildfireData(populateArrayChartForWildfires, whereClause, extentJSON);
+            }
+
             function _initWebMapByID(webMapID){
                 arcgisUtils.createMap(webMapID, "mapDiv").then(function(response) {
                     app.map = response.map;
                     app.operationalLayers = _getWebMapOperationalLayers(response);
 
+                    app.searchWilfireByExtent();
                     _addExtentChangeEventHandlerToMap(app.map);
-                    _getWildfireDataByMapExent(app.map.extent, populateArrayChartForWildfires);
                     _queryWildfireData(function(fullListOfWildfires){
                         addSearchInputOnTypeEventHandler(fullListOfWildfires);
                     })
@@ -93,50 +105,23 @@ require([
                 app.operationalLayers.forEach(function(layer){
                     layer.layerObject.setLayerDefinitions(layerDefs);
                 });
-                _getWildfireDataByMapExent(app.map.extent, populateArrayChartForWildfires);
+                this.searchWilfireInCurrentMapExtent();
             }
 
             function _addExtentChangeEventHandlerToMap(map){
                 map.on('extent-change', evt=>{
-                    _getWildfireDataByMapExent(evt.extent, populateArrayChartForWildfires);
+                    app.searchWilfireByExtent(evt.extent, populateArrayChartForWildfires);
                 }); 
             }
 
             function _getWildfireDataByMapExent(extent, callback){
-                let requestURL = REQUEST_URL_WILDFIRE_ACTIVITY;
                 let extentJSON = JSON.stringify(extent.toJson());
                 let whereClause = "PER_CONT < 100 AND " + _getWhereClauseForAffectedArea();
-
                 _queryWildfireData(callback, whereClause, extentJSON);
-
-                // var wildfireDataRequest = esriRequest({
-                //     url: requestURL,
-                //     content: {
-                //         f: "json",
-                //         outFields: "*",
-                //         where: "PER_CONT < 100 AND " + whereClauseForAffectedArea,
-                //         geometry: JSON.stringify(extentJSON),
-                //         geometryType: "esriGeometryEnvelope",
-                //         returnGeometry: true,
-                //     },
-                //     handleAs: "json",
-                //     callbackParamName: "callback"
-                // });
-
-                // function requestSuccessHandler(response) {
-                //     callback(response.features);
-                // }
-        
-                // function requestErrorHandler(error) {
-                //     console.log("Error: ", error.message);
-                // }
-        
-                // wildfireDataRequest.then(requestSuccessHandler, requestErrorHandler);
-        
             }
 
             function _queryWildfireData(callback, whereClause, searchExtent){
-                var params = {
+                let params = {
                     f: "json",
                     outFields: "*",
                     where: whereClause || "PER_CONT < 100",
@@ -146,7 +131,7 @@ require([
                     params.geometry = searchExtent;
                     params.geometryType = "esriGeometryEnvelope";
                 }
-                var wildfireDataRequest = esriRequest({
+                let wildfireDataRequest = esriRequest({
                     url: REQUEST_URL_WILDFIRE_ACTIVITY,
                     content: params,
                     handleAs: "json",
@@ -165,14 +150,14 @@ require([
             }
 
             function _getWebMapOperationalLayers(response){
-                var layers = response.itemInfo.itemData.operationalLayers.filter(function(layer){
+                let layers = response.itemInfo.itemData.operationalLayers.filter(function(layer){
                     return layer.layerType === 'ArcGISMapServiceLayer' && layer.visibility === true;
                 });
                 return layers;
             }
 
             function _signInToArcGISPortal(OAuthAppID){
-                var info = new OAuthInfo({
+                let info = new OAuthInfo({
                     appId: OAuthAppID,
                     popup: false
                 });
@@ -249,20 +234,51 @@ require([
 
         }
 
+        function populateSuggestionList(arrOfListItems){
+            var suggestionListContainer = $('.suggestion-list-container');
+            suggestionListContainer.empty();
+            if(arrOfListItems.length){
+                arrOfListItems = arrOfListItems.map(function(d){
+                    return "<div class='suggestion-item'><span class='font-size--2'>" + d + "</span></div>"
+                });
+                suggestionListContainer.append(arrOfListItems.join(''));
+                suggestionListContainer.removeClass('hide');
+                addClickEventHandlerToSuggestionListItems(suggestionListContainer);
+            } else {
+                suggestionListContainer.addClass('hide');
+                wildFireVizAp.searchWilfireByExtent();
+            }
+        }
+
+        function addClickEventHandlerToSuggestionListItems(suggestionListContainer){
+            suggestionListContainer.find('.suggestion-item').on('click', function(evt){
+                var itemText = $(this).text();
+                $('.fire-name-search-input').val(itemText);
+                suggestionListContainer.addClass('hide');
+                wildFireVizAp.searchWildfireByName(itemText);
+            });
+        }
+
         function addSearchInputOnTypeEventHandler(arrOfAllWildfires){
             
             var arrOfWildfireNames = arrOfAllWildfires.map(function(d){
                 return d.attributes.FIRE_NAME;
             });
             
-            $('.fire-name-search-input').on( "keydown", function(evt){
+            $('.fire-name-search-input').on( "keyup", function(evt){
                 let currentText = $(this).val();
-                if(currentText.length >= 3){
-                    console.log(currentText);
-                }
+                let textToSearch = new RegExp('^' + currentText + '.*$', 'i');
+                let matchedNames = [];
+                if(currentText.length >= 2){
+                    matchedNames = arrOfWildfireNames.filter(function(d, i){
+                        return d.match(textToSearch);
+                    }).splice(0, 5);
+                    populateSuggestionList(matchedNames);
+                } 
+                populateSuggestionList(matchedNames);
             }); 
 
-            console.log(arrOfWildfireNames);
+            // console.log(arrOfWildfireNames);
         }
 
         function affectedAreaFilterOnClickHandler(evt){
