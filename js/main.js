@@ -240,7 +240,7 @@ require([
             });
         }
 
-        function populateSuggestionList(arrOfListItems){
+        function populateSuggestionList(arrOfListItems, inputTextValue){
             var suggestionListContainer = $('.suggestion-list-container');
             suggestionListContainer.empty();
             if(arrOfListItems.length){
@@ -252,7 +252,9 @@ require([
                 addClickEventHandlerToSuggestionListItems(suggestionListContainer);
             } else {
                 suggestionListContainer.addClass('hide');
-                // wildFireVizAp.searchWildfire();
+                if(!inputTextValue){
+                    wildFireVizAp.searchWildfire();
+                }
             }
         }
 
@@ -273,7 +275,7 @@ require([
                 return d.attributes.FIRE_NAME;
             });
             
-            $('.fire-name-search-input').on( "keyup", function(evt){
+            $('.fire-name-search-input').unbind('keyup').on( "keyup", function(evt){
                 let currentText = $(this).val();
                 let textToSearch = new RegExp('^' + currentText + '.*$', 'i');
                 let matchedNames = [];
@@ -281,9 +283,8 @@ require([
                     matchedNames = arrOfWildfireNames.filter(function(d, i){
                         return d.match(textToSearch);
                     }).splice(0, 5);
-                    populateSuggestionList(matchedNames);
                 } 
-                populateSuggestionList(matchedNames);
+                populateSuggestionList(matchedNames, currentText);
             }); 
 
             // console.log(arrOfWildfireNames);
