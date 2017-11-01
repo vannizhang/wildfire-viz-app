@@ -105,7 +105,7 @@ require([
                 app.operationalLayers.forEach(function(layer){
                     layer.layerObject.setLayerDefinitions(layerDefs);
                 });
-                this.searchWilfireInCurrentMapExtent();
+                app.searchWilfireByExtent();
             }
 
             function _addExtentChangeEventHandlerToMap(map){
@@ -210,10 +210,6 @@ require([
                 var itemIdx = $(this).index();
                 var selectedFeature = wildfireData[itemIdx];
                 var selectedFeatureGeom = new Point( {"x": selectedFeature.attributes.LONGITUDE, "y": selectedFeature.attributes.LATITUDE, "spatialReference": {"wkid": 4326 } });
-
-                // console.log(selectedFeature);
-                // // console.log(wildFireVizAp.map.infoWindow);
-
                 var contentHtmlStr = `
                     <div class="header">${selectedFeature.attributes.FIRE_NAME}</div>
                     <div class="hzLine"></div>
