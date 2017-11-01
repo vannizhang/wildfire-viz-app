@@ -61,15 +61,8 @@ require([
                 onSuccessHandler = onSuccessHandler || populateArrayChartForWildfires;
 
                 let extentJSON = JSON.stringify(extent.toJson());
-                let arrOfWhereClause = ["PER_CONT < 100", _getWhereClauseForAffectedArea()];
-                if(whereClause){
-                    arrOfWhereClause.push(whereClause);
-                }
-                arrOfWhereClause = arrOfWhereClause.map(function(item){
-                    return '(' + item + ')';
-                })
-                whereClause = arrOfWhereClause.join(" AND ");
                 let queryParams = _getQueryParams(whereClause, extentJSON);
+
                 _queryWildfireData(queryParams, onSuccessHandler);
             }
 
@@ -80,9 +73,9 @@ require([
 
                     app.searchWildfire();
                     _addExtentChangeEventHandlerToMap(app.map);
-                    _queryWildfireData(_getQueryParams(), function(fullListOfWildfires){
-                        addSearchInputOnTypeEventHandler(fullListOfWildfires);
-                    })
+                    // _queryWildfireData(_getQueryParams(), function(fullListOfWildfires){
+                    //     addSearchInputOnTypeEventHandler(fullListOfWildfires);
+                    // })
                 });
             }
 
@@ -124,13 +117,25 @@ require([
                 let params = {
                     f: "json",
                     outFields: "*",
-                    where: whereClause || "PER_CONT < 100",
+                    // where: whereClause || "PER_CONT < 100",
                     returnGeometry: false
                 };
+                let arrOfWhereClause = ["PER_CONT < 100", _getWhereClauseForAffectedArea()];
+                if(whereClause){
+                    arrOfWhereClause.push(whereClause);
+                }
+                arrOfWhereClause = arrOfWhereClause.map(function(item){
+                    return '(' + item + ')';
+                })
+                whereClause = arrOfWhereClause.join(" AND ");
+                params.where = whereClause;
+
                 if(searchExtent){
                     params.geometry = searchExtent;
                     params.geometryType = "esriGeometryEnvelope";
                 }
+
+                // console.log(params);
                 return params;
             }
 
@@ -144,6 +149,7 @@ require([
 
                 function requestSuccessHandler(response) {
                     callback(response.features);
+                    addSearchInputOnTypeEventHandler(response.features);
                 }
         
                 function requestErrorHandler(error) {
@@ -180,6 +186,7 @@ require([
         }
 
         function populateArrayChartForWildfires(wildfireData){
+            console.log('calling populateArrayChartForWildfires', wildfireData);
             var legendGrid = $('.legend-grid');
             var legendIcons = [];
             wildfireData.sort(function(a, b) {
@@ -231,7 +238,6 @@ require([
             legendGridItems.on('mouseout', function(evt){
                 wildFireVizAp.map.infoWindow.hide();
             });
-
         }
 
         function populateSuggestionList(arrOfListItems){
@@ -246,7 +252,7 @@ require([
                 addClickEventHandlerToSuggestionListItems(suggestionListContainer);
             } else {
                 suggestionListContainer.addClass('hide');
-                wildFireVizAp.searchWilfireByExtent();
+                // wildFireVizAp.searchWildfire();
             }
         }
 
