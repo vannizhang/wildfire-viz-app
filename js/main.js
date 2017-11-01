@@ -39,7 +39,7 @@ require([
                 {'min': 110720, 'max': Number.POSITIVE_INFINITY, 'checked': true},
                 {'min': 40906, 'max': 110720, 'checked': true},
                 {'min': 11067, 'max': 40906, 'checked': true},
-                {'min': 0, 'max': 40906, 'checked': true},
+                {'min': 0, 'max': 11067, 'checked': true},
             ];
             
             this.startUp = function(){
@@ -55,16 +55,22 @@ require([
                 _setLayerDefinitionsForWildfireLayer(affectedAreaWhereClause);
             }
 
-            this.searchWildfireByName = function(name){
-                let whereClause = "PER_CONT < 100 AND FIRE_NAME = '" + name + "'";
-                _queryWildfireData(populateArrayChartForWildfires, whereClause);
-            }
+            this.searchWildfire = function(options={}, onSuccessHandler){
+                let extent = options.extent || this.map.extent;
+                let whereClause = options.whereClause || null;
+                onSuccessHandler = onSuccessHandler || populateArrayChartForWildfires;
 
-            this.searchWilfireByExtent = function(extent){
-                extent = extent || this.map.extent;
                 let extentJSON = JSON.stringify(extent.toJson());
-                let whereClause = "PER_CONT < 100 AND " + _getWhereClauseForAffectedArea();
-                _queryWildfireData(populateArrayChartForWildfires, whereClause, extentJSON);
+                let arrOfWhereClause = ["PER_CONT < 100", _getWhereClauseForAffectedArea()];
+                if(whereClause){
+                    arrOfWhereClause.push(whereClause);
+                }
+                arrOfWhereClause = arrOfWhereClause.map(function(item){
+                    return '(' + item + ')';
+                })
+                whereClause = arrOfWhereClause.join(" AND ");
+                let queryParams = _getQueryParams(whereClause, extentJSON);
+                _queryWildfireData(queryParams, onSuccessHandler);
             }
 
             function _initWebMapByID(webMapID){
@@ -72,9 +78,9 @@ require([
                     app.map = response.map;
                     app.operationalLayers = _getWebMapOperationalLayers(response);
 
-                    app.searchWilfireByExtent();
+                    app.searchWildfire();
                     _addExtentChangeEventHandlerToMap(app.map);
-                    _queryWildfireData(function(fullListOfWildfires){
+                    _queryWildfireData(_getQueryParams(), function(fullListOfWildfires){
                         addSearchInputOnTypeEventHandler(fullListOfWildfires);
                     })
                 });
@@ -89,7 +95,7 @@ require([
                         let whereClause = [condition1, condition2].filter(function(condition){
                             return condition !== '';
                         }).join(' AND ');
-                        arrOfWhereClauses.push(whereClause);
+                        arrOfWhereClauses.push(`(${whereClause})`);
                     }
                 });
                 // if all check boxes are unchecked, add a fake condition so no wildfires will be returned
@@ -105,22 +111,16 @@ require([
                 app.operationalLayers.forEach(function(layer){
                     layer.layerObject.setLayerDefinitions(layerDefs);
                 });
-                app.searchWilfireByExtent();
+                app.searchWildfire();
             }
 
             function _addExtentChangeEventHandlerToMap(map){
                 map.on('extent-change', evt=>{
-                    app.searchWilfireByExtent(evt.extent, populateArrayChartForWildfires);
+                    app.searchWildfire({"extent": evt.extent});
                 }); 
             }
 
-            function _getWildfireDataByMapExent(extent, callback){
-                let extentJSON = JSON.stringify(extent.toJson());
-                let whereClause = "PER_CONT < 100 AND " + _getWhereClauseForAffectedArea();
-                _queryWildfireData(callback, whereClause, extentJSON);
-            }
-
-            function _queryWildfireData(callback, whereClause, searchExtent){
+            function _getQueryParams(whereClause, searchExtent){
                 let params = {
                     f: "json",
                     outFields: "*",
@@ -131,6 +131,10 @@ require([
                     params.geometry = searchExtent;
                     params.geometryType = "esriGeometryEnvelope";
                 }
+                return params;
+            }
+
+            function _queryWildfireData(params, callback){
                 let wildfireDataRequest = esriRequest({
                     url: REQUEST_URL_WILDFIRE_ACTIVITY,
                     content: params,
@@ -251,7 +255,9 @@ require([
                 var itemText = $(this).text();
                 $('.fire-name-search-input').val(itemText);
                 suggestionListContainer.addClass('hide');
-                wildFireVizAp.searchWildfireByName(itemText);
+                // wildFireVizAp.searchWildfireByName(itemText);
+                let whereClause = `FIRE_NAME = '${itemText}'`;
+                wildFireVizAp.searchWildfire({"whereClause": whereClause}, populateArrayChartForWildfires);
             });
         }
 
