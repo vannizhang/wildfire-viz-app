@@ -79,6 +79,7 @@
 }
 
 .legend-icon {
+    position: relative;
     display: inline-block;
     height: 50px;
     width: 50px;
@@ -106,5 +107,19 @@
 }
 
 .legend-grid .legend-icon:hover {
-    border: solid 1px #B77600;
+    /* border: solid 1px #B77600; */
+}
+
+.bottom-pct-indicator {
+    position: absolute;
+    width: 100%;
+    height: 1px;
+    bottom: 0;
+    background-color: #670043;
+}
+
+.highlight-bar {
+    /* width: 50%; */
+    height: 100%;
+    background-color: #B77600;
 }

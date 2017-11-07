@@ -5,6 +5,8 @@ require([
     "esri/arcgis/Portal",
     "esri/IdentityManager",
     "esri/geometry/Point",
+    "esri/geometry/Multipoint",
+    "esri/SpatialReference",
     "dojo/domReady!"
 ], function(
     arcgisUtils, 
@@ -12,7 +14,9 @@ require([
     OAuthInfo,
     arcgisPortal,
     esriId,
-    Point
+    Point,
+    Multipoint,
+    SpatialReference
 ){
     $(document).ready(function () {
         // Enforce strict mode
@@ -23,6 +27,7 @@ require([
         const REQUEST_URL_WILDFIRE_ACTIVITY = "https://livefeeds.arcgis.com/arcgis/rest/services/LiveFeeds/Wildfire_Activity/MapServer/0/query";
         const OAUTH_APP_ID = "5LTx4lRbinywSMvI";
         const AFFECTED_AREA_FIELD_NAME = 'AREA_';
+        const PCT_CONTAINED_FIELD_NAME = 'PER_CONT';
                 
         //initialize app
         var wildFireVizAp = new WildFireVizApp();
@@ -71,12 +76,23 @@ require([
                     app.map = response.map;
                     app.operationalLayers = _getWebMapOperationalLayers(response);
 
-                    app.searchWildfire();
                     _addExtentChangeEventHandlerToMap(app.map);
-                    // _queryWildfireData(_getQueryParams(), function(fullListOfWildfires){
-                    //     addSearchInputOnTypeEventHandler(fullListOfWildfires);
-                    // })
+
+                    _queryWildfireData(_getQueryParams(null, null, true), function(fullListOfWildfires){
+                        // console.log('fullListOfWildfires', fullListOfWildfires);
+                        addSearchInputOnTypeEventHandler(fullListOfWildfires);
+                        _zoomToExtentOfAllFires(fullListOfWildfires);
+                    })
                 });
+            }
+
+            function _zoomToExtentOfAllFires(fullListOfWildfires){
+                let arrOfWildfirePointLocation = fullListOfWildfires.map(function(d){
+                    return [d.geometry.x, d.geometry.y];
+                });
+                let multipointForAllWildfires = new Multipoint(new SpatialReference({wkid:102100}));
+                multipointForAllWildfires.points = arrOfWildfirePointLocation;
+                app.map.setExtent(multipointForAllWildfires.getExtent());
             }
 
             function _getWhereClauseForAffectedArea(){
@@ -113,12 +129,12 @@ require([
                 }); 
             }
 
-            function _getQueryParams(whereClause, searchExtent){
+            function _getQueryParams(whereClause, searchExtent, returnGeometry=false){
                 let params = {
                     f: "json",
                     outFields: "*",
                     // where: whereClause || "PER_CONT < 100",
-                    returnGeometry: false
+                    returnGeometry: returnGeometry
                 };
                 let arrOfWhereClause = ["PER_CONT < 100", _getWhereClauseForAffectedArea()];
                 if(whereClause){
@@ -186,7 +202,7 @@ require([
         }
 
         function populateArrayChartForWildfires(wildfireData){
-            console.log('calling populateArrayChartForWildfires', wildfireData);
+            // console.log('calling populateArrayChartForWildfires', wildfireData);
             var legendGrid = $('.legend-grid');
             var legendIcons = [];
             wildfireData.sort(function(a, b) {
@@ -199,6 +215,7 @@ require([
             wildfireData.forEach(function(d) {
                 var legendClass;
                 var area = d.attributes[AFFECTED_AREA_FIELD_NAME];
+                var pctContained = d.attributes[PCT_CONTAINED_FIELD_NAME];
                 if(area >= 110720){
                     legendClass = 1;
                 } else if(area < 110720 && area >= 40906){
@@ -208,7 +225,15 @@ require([
                 } else {
                     legendClass = 4;
                 }
-                var legendIconStr = '<div class="legend-grid-item block trailer-half"><div class="legend-icon legend-class-' + legendClass + '"></div></div>';
+                var legendIconStr = `
+                    <div class="legend-grid-item block trailer-half">
+                        <div class="legend-icon legend-class-${legendClass}">
+                            <div class='bottom-pct-indicator'>
+                                <div class='highlight-bar' style="width: ${pctContained}%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
                 legendIcons.push(legendIconStr);
             });
 
