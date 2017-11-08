@@ -30,8 +30,8 @@ require([
         const PCT_CONTAINED_FIELD_NAME = 'PER_CONT';
                 
         //initialize app
-        var wildFireVizAp = new WildFireVizApp();
-        wildFireVizAp.startUp();
+        var wildFireVizApp = new WildFireVizApp();
+        wildFireVizApp.startUp();
 
         //attach app event handlers
         $('.affected-area-filter').on('click', '.fa', affectedAreaFilterOnClickHandler);
@@ -92,7 +92,7 @@ require([
                 });
                 let multipointForAllWildfires = new Multipoint(new SpatialReference({wkid:102100}));
                 multipointForAllWildfires.points = arrOfWildfirePointLocation;
-                app.map.setExtent(multipointForAllWildfires.getExtent());
+                app.map.setExtent(multipointForAllWildfires.getExtent(), true);
             }
 
             function _getWhereClauseForAffectedArea(){
@@ -243,25 +243,36 @@ require([
             // console.log(wildfireDataToPopulate);
 
             legendGridItems.on('mouseover', function(evt){
-                var itemIdx = $(this).index();
-                var selectedFeature = wildfireData[itemIdx];
-                var selectedFeatureGeom = new Point( {"x": selectedFeature.attributes.LONGITUDE, "y": selectedFeature.attributes.LATITUDE, "spatialReference": {"wkid": 4326 } });
-                var contentHtmlStr = `
-                    <div class="header">${selectedFeature.attributes.FIRE_NAME}</div>
-                    <div class="hzLine"></div>
-                    <span>The Willow fire is estimated to be ${selectedFeature.attributes.AREA_} ACRES and ${selectedFeature.attributes.PER_CONT}% contained.</span>
-                    <br><br>
-                    <span>Data Source: NIFC</span><br>
-                    <span>Start Date: ${selectedFeature.attributes.START_DATE}</span>
-                `;
+                // var itemIdx = $(this).index();
+                // var selectedFeature = wildfireData[itemIdx];
+                // var selectedFeatureGeom = new Point( {"x": selectedFeature.attributes.LONGITUDE, "y": selectedFeature.attributes.LATITUDE, "spatialReference": {"wkid": 4326 } });
+                // var contentHtmlStr = `
+                //     <div class="header">${selectedFeature.attributes.FIRE_NAME}</div>
+                //     <div class="hzLine"></div>
+                //     <span>The Willow fire is estimated to be ${selectedFeature.attributes.AREA_} ACRES and ${selectedFeature.attributes.PER_CONT}% contained.</span>
+                //     <br><br>
+                //     <span>Data Source: NIFC</span><br>
+                //     <span>Start Date: ${selectedFeature.attributes.START_DATE}</span>
+                // `;
 
-                wildFireVizAp.map.infoWindow.setTitle('');
-                wildFireVizAp.map.infoWindow.setContent(contentHtmlStr);
-                wildFireVizAp.map.infoWindow.show(selectedFeatureGeom);
+                // wildFireVizApp.map.infoWindow.setTitle('');
+                // wildFireVizApp.map.infoWindow.setContent(contentHtmlStr);
+                // wildFireVizApp.map.infoWindow.show(selectedFeatureGeom);
             });
 
             legendGridItems.on('mouseout', function(evt){
-                wildFireVizAp.map.infoWindow.hide();
+                // wildFireVizApp.map.infoWindow.hide();
+            });
+
+            addClickHandlerToLegendGridItems(wildfireData);
+        }
+
+        function addClickHandlerToLegendGridItems(wildfireData){
+            $('.legend-grid-item').on('click', function(evt){
+                var itemIdx = $(this).index();
+                var selectedFeature = wildfireData[itemIdx];
+                var selectedFeatureGeom = new Point( {"x": selectedFeature.attributes.LONGITUDE, "y": selectedFeature.attributes.LATITUDE, "spatialReference": {"wkid": 4326 } });
+                wildFireVizApp.map.centerAndZoom(selectedFeatureGeom, 10);
             });
         }
 
@@ -278,7 +289,7 @@ require([
             } else {
                 suggestionListContainer.addClass('hide');
                 if(!inputTextValue){
-                    wildFireVizAp.searchWildfire();
+                    wildFireVizApp.searchWildfire();
                 }
             }
         }
@@ -288,9 +299,9 @@ require([
                 var itemText = $(this).text();
                 $('.fire-name-search-input').val(itemText);
                 suggestionListContainer.addClass('hide');
-                // wildFireVizAp.searchWildfireByName(itemText);
+                // wildFireVizApp.searchWildfireByName(itemText);
                 let whereClause = `FIRE_NAME = '${itemText}'`;
-                wildFireVizAp.searchWildfire({"whereClause": whereClause}, populateArrayChartForWildfires);
+                wildFireVizApp.searchWildfire({"whereClause": whereClause}, populateArrayChartForWildfires);
             });
         }
 
@@ -332,7 +343,7 @@ require([
                 arrOfAreaFilterStatus.push(isCBoxChecked);
             });
 
-            wildFireVizAp.updateAffectedAreaFilterData(arrOfAreaFilterStatus);
+            wildFireVizApp.updateAffectedAreaFilterData(arrOfAreaFilterStatus);
         }
 
     });
