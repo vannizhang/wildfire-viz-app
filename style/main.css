@@ -107,7 +107,9 @@
 }
 
 .legend-grid .legend-icon:hover {
-    /* border: solid 1px #B77600; */
+    border-top: solid 1px #670043;
+    border-left: solid 1px #670043;
+    border-right: solid 1px #670043;
 }
 
 .bottom-pct-indicator {

@@ -243,25 +243,25 @@ require([
             // console.log(wildfireDataToPopulate);
 
             legendGridItems.on('mouseover', function(evt){
-                // var itemIdx = $(this).index();
-                // var selectedFeature = wildfireData[itemIdx];
-                // var selectedFeatureGeom = new Point( {"x": selectedFeature.attributes.LONGITUDE, "y": selectedFeature.attributes.LATITUDE, "spatialReference": {"wkid": 4326 } });
-                // var contentHtmlStr = `
-                //     <div class="header">${selectedFeature.attributes.FIRE_NAME}</div>
-                //     <div class="hzLine"></div>
-                //     <span>The Willow fire is estimated to be ${selectedFeature.attributes.AREA_} ACRES and ${selectedFeature.attributes.PER_CONT}% contained.</span>
-                //     <br><br>
-                //     <span>Data Source: NIFC</span><br>
-                //     <span>Start Date: ${selectedFeature.attributes.START_DATE}</span>
-                // `;
+                var itemIdx = $(this).index();
+                var selectedFeature = wildfireData[itemIdx];
+                var selectedFeatureGeom = new Point( {"x": selectedFeature.attributes.LONGITUDE, "y": selectedFeature.attributes.LATITUDE, "spatialReference": {"wkid": 4326 } });
+                var contentHtmlStr = `
+                    <div class="header">${selectedFeature.attributes.FIRE_NAME}</div>
+                    <div class="hzLine"></div>
+                    <span>The Willow fire is estimated to be ${selectedFeature.attributes.AREA_} ACRES and ${selectedFeature.attributes.PER_CONT}% contained.</span>
+                    <br><br>
+                    <span>Data Source: NIFC</span><br>
+                    <span>Start Date: ${selectedFeature.attributes.START_DATE}</span>
+                `;
 
-                // wildFireVizApp.map.infoWindow.setTitle('');
-                // wildFireVizApp.map.infoWindow.setContent(contentHtmlStr);
-                // wildFireVizApp.map.infoWindow.show(selectedFeatureGeom);
+                wildFireVizApp.map.infoWindow.setTitle('');
+                wildFireVizApp.map.infoWindow.setContent(contentHtmlStr);
+                wildFireVizApp.map.infoWindow.show(selectedFeatureGeom);
             });
 
             legendGridItems.on('mouseout', function(evt){
-                // wildFireVizApp.map.infoWindow.hide();
+                wildFireVizApp.map.infoWindow.hide();
             });
 
             addClickHandlerToLegendGridItems(wildfireData);
