@@ -33,13 +33,12 @@ require([
         var wildFireVizApp = new WildFireVizApp();
         wildFireVizApp.startUp();
 
-        //attach app event handlers
-        $('.affected-area-filter').on('click', '.fa', affectedAreaFilterOnClickHandler);
-
         function WildFireVizApp(){
             let app = this;
             this.map = null;
             this.operationalLayers = [];
+            this.arrOfAllWildfires = [];
+            this.selectedFireName = '';
             this.affectedAreaFilterData = [
                 {'min': 110720, 'max': Number.POSITIVE_INFINITY, 'checked': true},
                 {'min': 40906, 'max': 110720, 'checked': true},
@@ -61,8 +60,9 @@ require([
 
                     _queryWildfireData(_getQueryParams(null, null, true), function(fullListOfWildfires){
                         // console.log('fullListOfWildfires', fullListOfWildfires);
-                        addSearchInputOnTypeEventHandler(fullListOfWildfires);
-                        _zoomToExtentOfAllFires(fullListOfWildfires);
+                        app._setArrOfAllWildfires(fullListOfWildfires);
+                        app._zoomToExtentOfAllFires(fullListOfWildfires);
+                        addSearchInputOnTypeEventHandler();
                     })
                 });
             }
@@ -85,11 +85,32 @@ require([
                 });
                 let affectedAreaWhereClause = _getWhereClauseForAffectedArea();
                 // console.log(affectedAreaWhereClause);
-                // _setLayerDefinitionsForWildfireLayer(affectedAreaWhereClause);
                 this.searchWildfire();
             }
 
-            function _zoomToExtentOfAllFires(fullListOfWildfires){
+            this.setSelectedFireName = function(value=''){
+                this.selectedFireName = value;
+                toggleSearchBtnIcon();
+            }
+
+            this.getSelectedFireName = function(){
+                return this.selectedFireName;
+            }
+
+            this._setArrOfAllWildfires = function(wildfires){
+                this.arrOfAllWildfires = wildfires;
+            }
+
+            this.getArrOfAllWildfires = function(fireNameOnly=false){
+                let arrOfAllWildfires = (!fireNameOnly)
+                    ? this.arrOfAllWildfires
+                    : this.arrOfAllWildfires.map(d=>{
+                        return d.attributes.FIRE_NAME;
+                    })
+                return arrOfAllWildfires;
+            }
+
+            this._zoomToExtentOfAllFires = function(fullListOfWildfires){
                 let arrOfWildfirePointLocation = fullListOfWildfires.map(function(d){
                     return [d.geometry.x, d.geometry.y];
                 });
@@ -118,7 +139,8 @@ require([
             }
 
             function _getFireNameFromInput(){
-                let fireName = $('.fire-name-search-input').val();
+                // let fireName = $('.fire-name-search-input').val();
+                let fireName = app.getSelectedFireName();
                 let whereClauseForFireName = fireName ? `FIRE_NAME = '${fireName}'` : null;
                 return whereClauseForFireName;
             }
@@ -284,15 +306,16 @@ require([
             });
         }
 
-        function populateSuggestionList(arrOfListItems, inputTextValue){
+        function populateSuggestionList(arrOfSuggestedFireNames, inputTextValue){
             var suggestionListContainer = $('.suggestion-list-container');
             suggestionListContainer.empty();
-            if(arrOfListItems.length){
-                arrOfListItems = arrOfListItems.map(function(d){
+            if(arrOfSuggestedFireNames.length){
+                arrOfSuggestedFireNames = arrOfSuggestedFireNames.map(function(d){
                     return "<div class='suggestion-item'><span class='font-size--2'>" + d + "</span></div>"
                 });
-                suggestionListContainer.append(arrOfListItems.join(''));
-                suggestionListContainer.removeClass('hide');
+                suggestionListContainer.append(arrOfSuggestedFireNames.join(''));
+                // suggestionListContainer.removeClass('hide');
+                toggleSuggestionList(true);
                 addClickEventHandlerToSuggestionListItems(suggestionListContainer);
             } else {
                 suggestionListContainer.addClass('hide');
@@ -306,33 +329,30 @@ require([
             suggestionListContainer.find('.suggestion-item').on('click', function(evt){
                 var itemText = $(this).text();
                 $('.fire-name-search-input').val(itemText);
-                suggestionListContainer.addClass('hide');
-                // // wildFireVizApp.searchWildfireByName(itemText);
-                // let whereClause = `FIRE_NAME = '${itemText}'`;
-                // wildFireVizApp.searchWildfire({"whereClause": whereClause});
+                wildFireVizApp.setSelectedFireName(itemText);
+                toggleSuggestionList(false);
+                // suggestionListContainer.addClass('hide');
                 wildFireVizApp.searchWildfire();
             });
         }
 
-        function addSearchInputOnTypeEventHandler(arrOfAllWildfires){
-            
-            var arrOfWildfireNames = arrOfAllWildfires.map(function(d){
-                return d.attributes.FIRE_NAME;
-            });
-            
-            $('.fire-name-search-input').unbind('keyup').on( "keyup", function(evt){
-                let currentText = $(this).val();
-                let textToSearch = new RegExp('^' + currentText + '.*$', 'i');
-                let matchedNames = [];
-                if(currentText.length >= 2){
-                    matchedNames = arrOfWildfireNames.filter(function(d, i){
-                        return d.match(textToSearch);
-                    }).splice(0, 5);
-                } 
-                populateSuggestionList(matchedNames, currentText);
-            }); 
-
+        function addSearchInputOnTypeEventHandler(){
+            $('.fire-name-search-input').unbind('keyup').on( "keyup", fireNameSearchInputOnKeyupHandler); 
             // console.log(arrOfWildfireNames);
+        }
+
+        function fireNameSearchInputOnKeyupHandler(evt){
+            let arrOfWildfireNames = wildFireVizApp.getArrOfAllWildfires(true);
+            let currentText = $(this).val();
+            let textToSearch = new RegExp('^' + currentText + '.*$', 'i');
+            let matchedNames = [];
+            if(currentText.length >= 2){
+                matchedNames = arrOfWildfireNames.filter(function(d, i){
+                    return d.match(textToSearch);
+                }).splice(0, 5);
+            } 
+            wildFireVizApp.setSelectedFireName(currentText);
+            populateSuggestionList(matchedNames, currentText);
         }
 
         function affectedAreaFilterOnClickHandler(evt){
@@ -354,6 +374,74 @@ require([
 
             wildFireVizApp.updateAffectedAreaFilterData(arrOfAreaFilterStatus);
         }
+
+        function searchBtnOnClickHandler(evt){
+            let searchBtn = $(this);
+            let searchBtnIcon = searchBtn.find('.fa');
+            let isClickToClickSearchText = searchBtnIcon.hasClass('fa-times');
+
+            if(isClickToClickSearchText){
+                $('.fire-name-search-input').val('');
+                wildFireVizApp.setSelectedFireName();
+                wildFireVizApp.searchWildfire();
+            } 
+        }
+
+        function toggleSuggestionListBtnOnClickHandler(){
+            let isSuggestionListInvisible = $('.suggestion-list-container').hasClass('hide');
+
+            if(isSuggestionListInvisible){
+                let arrOfWildfireNames = wildFireVizApp.getArrOfAllWildfires(true);
+                populateSuggestionList(arrOfWildfireNames);
+            } else {
+                // hideSuggestionList();
+                toggleSuggestionList(false);
+            }
+        }
+
+        function updateToggleSuggestionListBtnIcon(){
+            let isSuggestionListInvisible = $('.suggestion-list-container').hasClass('hide');
+            let targetBtn = $('.toggle-suggestion-list-btn');
+            let toggleSuggestionListBtnIcon = targetBtn.find('.fa');
+            if(isSuggestionListInvisible){
+                toggleSuggestionListBtnIcon.addClass('fa-caret-down');
+                toggleSuggestionListBtnIcon.removeClass('fa-caret-up');
+            } else {
+                toggleSuggestionListBtnIcon.addClass('fa-caret-up');
+                toggleSuggestionListBtnIcon.removeClass('fa-caret-down');
+            }
+        }
+
+        function toggleSuggestionList(isVisible){
+            var suggestionListContainer = $('.suggestion-list-container');
+            if(isVisible){
+                suggestionListContainer.removeClass('hide');
+            } else {
+                suggestionListContainer.addClass('hide');
+            }   
+            updateToggleSuggestionListBtnIcon();
+        }
+
+        function toggleSearchBtnIcon(){
+            let selectedFireName = wildFireVizApp.getSelectedFireName();
+            let searchBtn = $('.search-by-name-btn');
+            let searchBtnIcon = searchBtn.find('.fa');
+            if(selectedFireName){
+                searchBtnIcon.addClass('fa-times');
+                searchBtnIcon.removeClass('fa-search');
+            } else {
+                searchBtnIcon.removeClass('fa-times');
+                searchBtnIcon.addClass('fa-search'); 
+                hideSuggestionList();
+            }
+        }
+
+        //attach app event handlers
+        $('.affected-area-filter').on('click', '.fa', affectedAreaFilterOnClickHandler);
+
+        $('.search-by-name-btn').on('click', searchBtnOnClickHandler);
+
+        $('.toggle-suggestion-list-btn').on('click', toggleSuggestionListBtnOnClickHandler);
 
     });
 
