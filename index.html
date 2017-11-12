@@ -33,12 +33,22 @@
         <div id="mapDiv">
             <div class='side-bar'>
                 <div class='inputs-container panel panel-no-border panel-no-background'>
-                    <label>
-                        <input type="text" placeholder="Search by fire name..." class="modifier-class fire-name-search-input" required>
-                        <div class='panel panel-no-border panel-no-padding suggestion-list-container hide'>
+                    <div class='search-input-wrap'>
+                        <input type="text" placeholder="Search by fire name..." class="fire-name-search-input" required>
+                        <div class='search-input-btns-wrap text-center'>
+                            <div class='search-input-btn inline-block'>
+                                <span class='fa fa-search'></span>
+                            </div>
+                            <div class='search-input-btn inline-block right'>
+                                <span class='fa fa-caret-down'></span>
+                            </div>
                         </div>
-                    </label>
-                    <div class="block-group block-group-4-up">
+                        
+                        <div class='panel panel-no-border panel-no-padding suggestion-list-container hide'></div>
+                    </div>
+                    
+
+                    <div class="block-group block-group-4-up leader-half">
                         <div class="block affected-area-filter">
                             <span class="legend-icon legend-class-1"></span>
                             <span class="font-size--3"><i class="fa fa-check-square-o fa-lg" aria-hidden="true"></i></span>

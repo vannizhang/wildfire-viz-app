@@ -61,11 +61,12 @@
     position: absolute;
     width: 100%;
     top: 39px;
+    z-index: 1000;
 }
 
 .suggestion-list-container > div {
     padding: 5px;
-    background-color: rgba(26, 0, 17, .9);
+    background-color: rgba(26, 0, 17, 1);    
 }
 
 .suggestion-list-container > div:hover {
@@ -124,4 +125,29 @@
     /* width: 50%; */
     height: 100%;
     background-color: #B77600;
+}
+
+.search-input-wrap{
+    position: relative;
+}
+
+.search-input-btns-wrap {
+    position: absolute;
+    width: auto;
+    height: 100%;
+    top: 0;
+    right: 0;
+    padding: 5px 0 5px;
+    /* background-color: #e0e0e0; */
+}
+
+.search-input-btn {
+    width: 35px;
+    /* height: 100%; */
+    color: #B77600;
+    line-height: 28px;
+}
+
+.search-input-btn:nth-child(1){
+    border-right: solid 1px #B77600;
 }

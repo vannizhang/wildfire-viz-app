@@ -48,30 +48,11 @@ require([
             ];
             
             this.startUp = function(){
-                _signInToArcGISPortal(OAUTH_APP_ID);
-                _initWebMapByID(WEB_MAP_ID);
+                this._signInToArcGISPortal(OAUTH_APP_ID);
+                this._initWebMapByID(WEB_MAP_ID);
             }
 
-            this.updateAffectedAreaFilterData = function(arrayOfFilterStatus){
-                this.affectedAreaFilterData.forEach(function(d,i){
-                    d.checked = arrayOfFilterStatus[i]
-                });
-                let affectedAreaWhereClause = _getWhereClauseForAffectedArea();
-                _setLayerDefinitionsForWildfireLayer(affectedAreaWhereClause);
-            }
-
-            this.searchWildfire = function(options={}, onSuccessHandler){
-                let extent = options.extent || this.map.extent;
-                let whereClause = options.whereClause || null;
-                onSuccessHandler = onSuccessHandler || populateArrayChartForWildfires;
-
-                let extentJSON = JSON.stringify(extent.toJson());
-                let queryParams = _getQueryParams(whereClause, extentJSON);
-
-                _queryWildfireData(queryParams, onSuccessHandler);
-            }
-
-            function _initWebMapByID(webMapID){
+            this._initWebMapByID = function(webMapID){
                 arcgisUtils.createMap(webMapID, "mapDiv").then(function(response) {
                     app.map = response.map;
                     app.operationalLayers = _getWebMapOperationalLayers(response);
@@ -84,6 +65,28 @@ require([
                         _zoomToExtentOfAllFires(fullListOfWildfires);
                     })
                 });
+            }
+
+            this.searchWildfire = function(options={}, onSuccessHandler){
+                let extent = options.extent || this.map.extent;
+                let whereClause = options.whereClause || null;
+                onSuccessHandler = onSuccessHandler || populateArrayChartForWildfires;
+
+                let extentJSON = JSON.stringify(extent.toJson());
+                let queryParams = _getQueryParams(whereClause, extentJSON);
+
+                _setLayerDefinitionsForWildfireLayer(queryParams.where);
+                _queryWildfireData(queryParams, onSuccessHandler);
+            }
+
+            this.updateAffectedAreaFilterData = function(arrayOfFilterStatus){
+                this.affectedAreaFilterData.forEach(function(d,i){
+                    d.checked = arrayOfFilterStatus[i]
+                });
+                let affectedAreaWhereClause = _getWhereClauseForAffectedArea();
+                // console.log(affectedAreaWhereClause);
+                // _setLayerDefinitionsForWildfireLayer(affectedAreaWhereClause);
+                this.searchWildfire();
             }
 
             function _zoomToExtentOfAllFires(fullListOfWildfires){
@@ -100,7 +103,7 @@ require([
                 app.affectedAreaFilterData.forEach(function(d){                    
                     if(d.checked){
                         let condition1 = AFFECTED_AREA_FIELD_NAME + ' >= ' + d.min;
-                        let condition2 = (d.max !== Number.POSITIVE_INFINITY) ? AFFECTED_AREA_FIELD_NAME + ' <= ' + d.max : '';
+                        let condition2 = (d.max !== Number.POSITIVE_INFINITY) ? AFFECTED_AREA_FIELD_NAME + ' < ' + d.max : '';
                         let whereClause = [condition1, condition2].filter(function(condition){
                             return condition !== '';
                         }).join(' AND ');
@@ -114,13 +117,19 @@ require([
                 return arrOfWhereClauses.join(' OR ');
             }
 
+            function _getFireNameFromInput(){
+                let fireName = $('.fire-name-search-input').val();
+                let whereClauseForFireName = fireName ? `FIRE_NAME = '${fireName}'` : null;
+                return whereClauseForFireName;
+            }
+
             function _setLayerDefinitionsForWildfireLayer(whereClause){
                 let layerDefs = [];
                 layerDefs[0] = whereClause;
+                console.log('setLayerDef', whereClause);
                 app.operationalLayers.forEach(function(layer){
                     layer.layerObject.setLayerDefinitions(layerDefs);
                 });
-                app.searchWildfire();
             }
 
             function _addExtentChangeEventHandlerToMap(map){
@@ -137,8 +146,9 @@ require([
                     returnGeometry: returnGeometry
                 };
                 let arrOfWhereClause = ["PER_CONT < 100", _getWhereClauseForAffectedArea()];
-                if(whereClause){
-                    arrOfWhereClause.push(whereClause);
+                let fireNameFromInput = _getFireNameFromInput();
+                if(fireNameFromInput){
+                    arrOfWhereClause.push(fireNameFromInput);
                 }
                 arrOfWhereClause = arrOfWhereClause.map(function(item){
                     return '(' + item + ')';
@@ -165,7 +175,7 @@ require([
 
                 function requestSuccessHandler(response) {
                     callback(response.features);
-                    addSearchInputOnTypeEventHandler(response.features);
+                    // addSearchInputOnTypeEventHandler(response.features);
                 }
         
                 function requestErrorHandler(error) {
@@ -182,7 +192,7 @@ require([
                 return layers;
             }
 
-            function _signInToArcGISPortal(OAuthAppID){
+            this._signInToArcGISPortal = function(OAuthAppID){
                 let info = new OAuthInfo({
                     appId: OAuthAppID,
                     popup: false
@@ -297,9 +307,10 @@ require([
                 var itemText = $(this).text();
                 $('.fire-name-search-input').val(itemText);
                 suggestionListContainer.addClass('hide');
-                // wildFireVizApp.searchWildfireByName(itemText);
-                let whereClause = `FIRE_NAME = '${itemText}'`;
-                wildFireVizApp.searchWildfire({"whereClause": whereClause}, populateArrayChartForWildfires);
+                // // wildFireVizApp.searchWildfireByName(itemText);
+                // let whereClause = `FIRE_NAME = '${itemText}'`;
+                // wildFireVizApp.searchWildfire({"whereClause": whereClause});
+                wildFireVizApp.searchWildfire();
             });
         }
 
