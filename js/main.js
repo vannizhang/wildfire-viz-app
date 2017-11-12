@@ -394,7 +394,6 @@ require([
                 let arrOfWildfireNames = wildFireVizApp.getArrOfAllWildfires(true);
                 populateSuggestionList(arrOfWildfireNames);
             } else {
-                // hideSuggestionList();
                 toggleSuggestionList(false);
             }
         }
@@ -432,7 +431,7 @@ require([
             } else {
                 searchBtnIcon.removeClass('fa-times');
                 searchBtnIcon.addClass('fa-search'); 
-                hideSuggestionList();
+                toggleSuggestionList(false);
             }
         }
 
