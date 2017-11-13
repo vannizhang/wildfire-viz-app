@@ -35,7 +35,7 @@ require([
         wildFireVizApp.startUp();
 
         function WildFireVizApp(){
-            let app = this;
+            // let app = this;
             this.map = null;
             this.operationalLayers = [];
             this.arrOfAllWildfires = [];
@@ -54,14 +54,14 @@ require([
 
             this._initWebMapByID = function(webMapID){
                 arcgisUtils.createMap(webMapID, "mapDiv").then(response=>{
-                    app.map = response.map;
-                    app.operationalLayers = app._getWebMapOperationalLayers(response);
+                    this.map = response.map;
+                    this.operationalLayers = this._getWebMapOperationalLayers(response);
 
-                    app._addExtentChangeEventHandlerToMap(app.map);
-                    app._queryWildfireData(app._getQueryParams(null, null, true), fullListOfWildfires=>{
+                    this._addExtentChangeEventHandlerToMap(this.map);
+                    this._queryWildfireData(this._getQueryParams(null, null, true), fullListOfWildfires=>{
                         // console.log('fullListOfWildfires', fullListOfWildfires);
-                        app._setArrOfAllWildfires(fullListOfWildfires);
-                        app._zoomToExtentOfAllFires(fullListOfWildfires);
+                        this._setArrOfAllWildfires(fullListOfWildfires);
+                        this._zoomToExtentOfAllFires(fullListOfWildfires);
                         addSearchInputOnTypeEventHandler();
                     })
                 });
@@ -116,12 +116,12 @@ require([
                 });
                 let multipointForAllWildfires = new Multipoint(new SpatialReference({wkid:102100}));
                 multipointForAllWildfires.points = arrOfWildfirePointLocation;
-                app.map.setExtent(multipointForAllWildfires.getExtent(), true);
+                this.map.setExtent(multipointForAllWildfires.getExtent(), true);
             }
 
-            this._getWhereClauseForAffectedArea = function(){
+            this._getWhereClauseForAffectedArea = function(){this
                 let arrOfWhereClauses = [];
-                app.affectedAreaFilterData.forEach(function(d){                    
+                this.affectedAreaFilterData.forEach(function(d){                    
                     if(d.checked){
                         let condition1 = AFFECTED_AREA_FIELD_NAME + ' >= ' + d.min;
                         let condition2 = (d.max !== Number.POSITIVE_INFINITY) ? AFFECTED_AREA_FIELD_NAME + ' < ' + d.max : '';
@@ -140,7 +140,7 @@ require([
 
             this._getFireNameFromInput = function(){
                 // let fireName = $('.fire-name-search-input').val();
-                let fireName = app.getSelectedFireName();
+                let fireName = this.getSelectedFireName();
                 let whereClauseForFireName = fireName ? `${FIRE_NAME_FIELD_NAME} = '${fireName}'` : null;
                 return whereClauseForFireName;
             }
@@ -148,15 +148,15 @@ require([
             this._setLayerDefinitionsForWildfireLayer =function(whereClause){
                 let layerDefs = [];
                 layerDefs[0] = whereClause;
-                console.log('setLayerDef', whereClause);
-                app.operationalLayers.forEach(function(layer){
+                // console.log('setLayerDef', whereClause);
+                this.operationalLayers.forEach(function(layer){
                     layer.layerObject.setLayerDefinitions(layerDefs);
                 });
             }
 
             this._addExtentChangeEventHandlerToMap = function(map){
                 map.on('extent-change', evt=>{
-                    app.searchWildfire({"extent": evt.extent});
+                    this.searchWildfire({"extent": evt.extent});
                 }); 
             }
 
@@ -167,8 +167,8 @@ require([
                     // where: whereClause || "PER_CONT < 100",
                     returnGeometry: returnGeometry
                 };
-                let arrOfWhereClause = ["PER_CONT < 100", app._getWhereClauseForAffectedArea()];
-                let fireNameFromInput = app._getFireNameFromInput();
+                let arrOfWhereClause = ["PER_CONT < 100", this._getWhereClauseForAffectedArea()];
+                let fireNameFromInput = this._getFireNameFromInput();
                 if(fireNameFromInput){
                     arrOfWhereClause.push(fireNameFromInput);
                 }
