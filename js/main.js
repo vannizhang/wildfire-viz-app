@@ -28,6 +28,7 @@ require([
         const OAUTH_APP_ID = "5LTx4lRbinywSMvI";
         const AFFECTED_AREA_FIELD_NAME = 'AREA_';
         const PCT_CONTAINED_FIELD_NAME = 'PER_CONT';
+        const FIRE_NAME_FIELD_NAME = 'FIRE_NAME';
                 
         //initialize app
         var wildFireVizApp = new WildFireVizApp();
@@ -52,13 +53,12 @@ require([
             }
 
             this._initWebMapByID = function(webMapID){
-                arcgisUtils.createMap(webMapID, "mapDiv").then(function(response) {
+                arcgisUtils.createMap(webMapID, "mapDiv").then(response=>{
                     app.map = response.map;
-                    app.operationalLayers = _getWebMapOperationalLayers(response);
+                    app.operationalLayers = app._getWebMapOperationalLayers(response);
 
-                    _addExtentChangeEventHandlerToMap(app.map);
-
-                    _queryWildfireData(_getQueryParams(null, null, true), function(fullListOfWildfires){
+                    app._addExtentChangeEventHandlerToMap(app.map);
+                    app._queryWildfireData(app._getQueryParams(null, null, true), fullListOfWildfires=>{
                         // console.log('fullListOfWildfires', fullListOfWildfires);
                         app._setArrOfAllWildfires(fullListOfWildfires);
                         app._zoomToExtentOfAllFires(fullListOfWildfires);
@@ -73,17 +73,17 @@ require([
                 onSuccessHandler = onSuccessHandler || populateArrayChartForWildfires;
 
                 let extentJSON = JSON.stringify(extent.toJson());
-                let queryParams = _getQueryParams(whereClause, extentJSON);
+                let queryParams = this._getQueryParams(whereClause, extentJSON);
 
-                _setLayerDefinitionsForWildfireLayer(queryParams.where);
-                _queryWildfireData(queryParams, onSuccessHandler);
+                this._setLayerDefinitionsForWildfireLayer(queryParams.where);
+                this._queryWildfireData(queryParams, onSuccessHandler);
             }
 
             this.updateAffectedAreaFilterData = function(arrayOfFilterStatus){
                 this.affectedAreaFilterData.forEach(function(d,i){
                     d.checked = arrayOfFilterStatus[i]
                 });
-                let affectedAreaWhereClause = _getWhereClauseForAffectedArea();
+                let affectedAreaWhereClause = this._getWhereClauseForAffectedArea();
                 // console.log(affectedAreaWhereClause);
                 this.searchWildfire();
             }
@@ -105,7 +105,7 @@ require([
                 let arrOfAllWildfires = (!fireNameOnly)
                     ? this.arrOfAllWildfires
                     : this.arrOfAllWildfires.map(d=>{
-                        return d.attributes.FIRE_NAME;
+                        return d.attributes[FIRE_NAME_FIELD_NAME];
                     })
                 return arrOfAllWildfires;
             }
@@ -119,7 +119,7 @@ require([
                 app.map.setExtent(multipointForAllWildfires.getExtent(), true);
             }
 
-            function _getWhereClauseForAffectedArea(){
+            this._getWhereClauseForAffectedArea = function(){
                 let arrOfWhereClauses = [];
                 app.affectedAreaFilterData.forEach(function(d){                    
                     if(d.checked){
@@ -138,14 +138,14 @@ require([
                 return arrOfWhereClauses.join(' OR ');
             }
 
-            function _getFireNameFromInput(){
+            this._getFireNameFromInput = function(){
                 // let fireName = $('.fire-name-search-input').val();
                 let fireName = app.getSelectedFireName();
-                let whereClauseForFireName = fireName ? `FIRE_NAME = '${fireName}'` : null;
+                let whereClauseForFireName = fireName ? `${FIRE_NAME_FIELD_NAME} = '${fireName}'` : null;
                 return whereClauseForFireName;
             }
 
-            function _setLayerDefinitionsForWildfireLayer(whereClause){
+            this._setLayerDefinitionsForWildfireLayer =function(whereClause){
                 let layerDefs = [];
                 layerDefs[0] = whereClause;
                 console.log('setLayerDef', whereClause);
@@ -154,21 +154,21 @@ require([
                 });
             }
 
-            function _addExtentChangeEventHandlerToMap(map){
+            this._addExtentChangeEventHandlerToMap = function(map){
                 map.on('extent-change', evt=>{
                     app.searchWildfire({"extent": evt.extent});
                 }); 
             }
 
-            function _getQueryParams(whereClause, searchExtent, returnGeometry=false){
+            this._getQueryParams = function(whereClause, searchExtent, returnGeometry=false){
                 let params = {
                     f: "json",
                     outFields: "*",
                     // where: whereClause || "PER_CONT < 100",
                     returnGeometry: returnGeometry
                 };
-                let arrOfWhereClause = ["PER_CONT < 100", _getWhereClauseForAffectedArea()];
-                let fireNameFromInput = _getFireNameFromInput();
+                let arrOfWhereClause = ["PER_CONT < 100", app._getWhereClauseForAffectedArea()];
+                let fireNameFromInput = app._getFireNameFromInput();
                 if(fireNameFromInput){
                     arrOfWhereClause.push(fireNameFromInput);
                 }
@@ -187,7 +187,7 @@ require([
                 return params;
             }
 
-            function _queryWildfireData(params, callback){
+            this._queryWildfireData = function(params, callback){
                 let wildfireDataRequest = esriRequest({
                     url: REQUEST_URL_WILDFIRE_ACTIVITY,
                     content: params,
@@ -207,7 +207,7 @@ require([
                 wildfireDataRequest.then(requestSuccessHandler, requestErrorHandler);
             }
 
-            function _getWebMapOperationalLayers(response){
+            this._getWebMapOperationalLayers = function(response){
                 let layers = response.itemInfo.itemData.operationalLayers.filter(function(layer){
                     return layer.layerType === 'ArcGISMapServiceLayer' && layer.visibility === true;
                 });
@@ -279,13 +279,13 @@ require([
                 var selectedFeature = wildfireData[itemIdx];
                 var selectedFeatureGeom = new Point( {"x": selectedFeature.attributes.LONGITUDE, "y": selectedFeature.attributes.LATITUDE, "spatialReference": {"wkid": 4326 } });
                 var contentHtmlStr = `
-                    <span>The ${selectedFeature.attributes.FIRE_NAME} fire is estimated to be ${selectedFeature.attributes.AREA_} ACRES and ${selectedFeature.attributes.PER_CONT}% contained.</span>
+                    <span>The ${selectedFeature.attributes[FIRE_NAME_FIELD_NAME]} fire is estimated to be ${selectedFeature.attributes.AREA_} ACRES and ${selectedFeature.attributes.PER_CONT}% contained.</span>
                     <br><br>
                     <span>Data Source: NIFC</span><br>
                     <span>Start Date: ${moment(selectedFeature.attributes.START_DATE).format("MMMM Do, YYYY")}</span>
                 `;
 
-                wildFireVizApp.map.infoWindow.setTitle(selectedFeature.attributes.FIRE_NAME);
+                wildFireVizApp.map.infoWindow.setTitle(selectedFeature.attributes[FIRE_NAME_FIELD_NAME]);
                 wildFireVizApp.map.infoWindow.setContent(contentHtmlStr);
                 wildFireVizApp.map.infoWindow.show(selectedFeatureGeom);
             });
