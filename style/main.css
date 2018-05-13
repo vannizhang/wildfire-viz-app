@@ -118,13 +118,13 @@
     width: 100%;
     height: 1px;
     bottom: 0;
-    background-color: #670043;
+    background-color: #B77600;
 }
 
 .highlight-bar {
     /* width: 50%; */
     height: 100%;
-    background-color: #B77600;
+    background-color: #670043;
 }
 
 .search-input-wrap{

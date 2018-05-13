@@ -23,21 +23,133 @@ require([
         'use strict';
 
         // App Config Data
-        const WEB_MAP_ID = "4b420a6ceb0e4addb021d5a8bf02f251";
-        const REQUEST_URL_WILDFIRE_ACTIVITY = "https://livefeeds.arcgis.com/arcgis/rest/services/LiveFeeds/Wildfire_Activity/MapServer/0/query";
+        const WEB_MAP_ID = "60f04046d1dc4cf7a8ff66729d872999";
+        const REQUEST_URL_WILDFIRE_ACTIVITY = "https://utility.arcgis.com/usrsvcs/servers/141efcbd82fd4c129f5b784c2bc85229/rest/services/LiveFeeds/Wildfire_Activity/MapServer/0/query";
         const OAUTH_APP_ID = "5LTx4lRbinywSMvI";
         const AFFECTED_AREA_FIELD_NAME = 'AREA_';
         const PCT_CONTAINED_FIELD_NAME = 'PER_CONT';
         const FIRE_NAME_FIELD_NAME = 'FIRE_NAME';
-                
-        //initialize app
-        var wildFireVizApp = new WildFireVizApp();
-        wildFireVizApp.startUp();
 
+        let wildfireModel = null;
+        let wildFireVizApp = null;
+
+        const WildFireDataModel = function(){
+
+            this.name = ''; 
+            this.extent = null;
+            // if true, display inactive fires on map
+            this.isInactiveFiresVisible = false; 
+            // the renderer used by wildfire activity layer were generated using the "Affected AREA" field in the AGOL Map Viewer, we need to store the classification breaks info
+            // so that we can filter the wildfires based on the selected "Affected Area"
+            this.affectedAreaRendererBreaks = []; 
+
+
+            this.setName = (nameStr='')=>{
+                this.name = nameStr
+            };
+
+            this.setExtent = (extent=null)=>{
+                this.extent = extent;
+            };
+
+            this.setIsInactiveFiresVisible = (isVisible=false)=>{
+                this.isInactiveFiresVisible = isVisible;
+            };
+
+            this.setAffectedAreaRendererBreaks = (breaksInfo=[])=>{
+                this.affectedAreaRendererBreaks = breaksInfo.map(breakInfo=>{
+                    return {
+                        'breakInfo': breakInfo,
+                        'isVisible': true
+                    };
+                });
+                console.log(this.affectedAreaRendererBreaks);
+            };
+
+            this.setAffectedAreaRendererVisibilityByIndex = (index=-1, isVisible)=>{
+                if(index){
+                    this.affectedAreaRendererBreaks[index].isVisible = isVisible;
+                }
+            }
+
+            this.getWhereClause = ()=>{
+
+                // list of where clauses that will be concatenated into the where string for the params,
+                // the default one is 'PER_CONT < 100' so it always exclude the wildfires that are 100% contained
+                const whereClauseForPctContained = PCT_CONTAINED_FIELD_NAME + " < 100";
+
+                const arrOfWhereClauses = [
+                    whereClauseForPctContained
+                ];
+            
+                // generate where clause for Affected AREA if there is any invisible renderer classes, 
+                // otherwise, no need to add where clause for Affected AREA so it would show wildfires for all Affected Areas
+                const countOfInvisibleRendererClasses = this.affectedAreaRendererBreaks.filter(d=>{ 
+                    return !d.isVisible 
+                }).length;
+
+                if(countOfInvisibleRendererClasses){
+
+                    const visibleRendererClasses = this.affectedAreaRendererBreaks.filter(d=>{ 
+                        return d.isVisible 
+                    });
+
+                    // if there is any visible class, generate the where clause using min and max value from item, 
+                    // otherwise, use the where clause "area == -1" to exlude all wildfires
+                    const whereClauseStrForVisibleRendererClasses = (visibleRendererClasses.length > 0)
+                        ? visibleRendererClasses.map((item, idx)=>{
+                            const minVal = item.breakInfo[0];
+                            const maxVal = item.breakInfo[1];
+                            // if not last item, use "(use area >= min AND area < max)", otherwise, just use "(area >= min)"
+                            const whereClauseStr = (idx !== visibleRendererClasses.length - 1) 
+                                ? `( ${AFFECTED_AREA_FIELD_NAME} >= ${minVal} AND ${AFFECTED_AREA_FIELD_NAME} < ${maxVal} )`
+                                : `( ${AFFECTED_AREA_FIELD_NAME} >= ${minVal} )`;
+                            return whereClauseStr;
+                        }).join(' OR ')
+                        : `( ${AFFECTED_AREA_FIELD_NAME} == -1 )`;
+                    
+                    arrOfWhereClauses.push(whereClauseStrForVisibleRendererClasses);
+                }
+
+                if(this.name){
+                    const whereClauseForName = `${FIRE_NAME_FIELD_NAME} = '${this.name}'`
+                    arrOfWhereClauses.push(whereClauseForName);
+                }
+
+                return arrOfWhereClauses.join(' AND ');
+            };
+
+            this.getQueryParams = (shouldReturnGeometry=false)=>{
+
+                const whereClauseStr = this.getWhereClause();
+
+                const params = {
+                    f: "json",
+                    outFields: "*",
+                    where: whereClauseStr,
+                    returnGeometry: shouldReturnGeometry
+                };
+
+                // add geometry to params using extent
+                if(this.extent){
+                    const extentJSON = JSON.stringify(extent.toJson());
+                    params.geometry = extentJSON;
+                    params.geometryType = "esriGeometryEnvelope";
+                }
+
+                return params;
+            }
+
+            // this.getRenderDefinitionExpression = ()=>{
+            //     let defExp = '';
+            //     return defExp;
+            // }
+        };
+                
         function WildFireVizApp(){
             // let app = this;
             this.map = null;
-            this.operationalLayers = [];
+            this.operationalLayers = []; // layers related to wildfire activities
             this.arrOfAllWildfires = [];
             this.selectedFireName = '';
             this.affectedAreaFilterData = [
@@ -48,16 +160,23 @@ require([
             ];
             
             this.startUp = function(){
-                this._signInToArcGISPortal(OAUTH_APP_ID);
+                // this._signInToArcGISPortal(OAUTH_APP_ID);
                 this._initWebMapByID(WEB_MAP_ID);
             }
 
             this._initWebMapByID = function(webMapID){
                 arcgisUtils.createMap(webMapID, "mapDiv").then(response=>{
+                    // set map object for the app
                     this.map = response.map;
-                    this.operationalLayers = this._getWebMapOperationalLayers(response);
-
                     this._addExtentChangeEventHandlerToMap(this.map);
+
+                    // get the operation layers for wildfire activity
+                    const operationalLayers = this._getWebMapOperationalLayers(response);
+                    const wildfireLayerRendererBreaksInfo = operationalLayers[0].layerObject.layerDrawingOptions[0].renderer.breaks;
+                    this.operationalLayers = operationalLayers;
+                    wildfireModel.setAffectedAreaRendererBreaks(wildfireLayerRendererBreaksInfo);
+
+                    // load all wildfire
                     this._queryWildfireData(this._getQueryParams(null, null, true), fullListOfWildfires=>{
                         // console.log('fullListOfWildfires', fullListOfWildfires);
                         this._setArrOfAllWildfires(fullListOfWildfires);
@@ -145,17 +264,11 @@ require([
                 return whereClauseForFireName;
             }
 
-            this._setLayerDefinitionsForWildfireLayer =function(whereClause){
-                let layerDefs = [];
-                layerDefs[0] = whereClause;
-                // console.log('setLayerDef', whereClause);
-                this.operationalLayers.forEach(function(layer){
-                    layer.layerObject.setLayerDefinitions(layerDefs);
-                });
-            }
-
             this._addExtentChangeEventHandlerToMap = function(map){
                 map.on('extent-change', evt=>{
+                    const currentMapExtent = evt.extent;
+                    wildfireModel.setExtent(currentMapExtent);
+
                     this.searchWildfire({"extent": evt.extent});
                 }); 
             }
@@ -164,7 +277,6 @@ require([
                 let params = {
                     f: "json",
                     outFields: "*",
-                    // where: whereClause || "PER_CONT < 100",
                     returnGeometry: returnGeometry
                 };
                 let arrOfWhereClause = ["PER_CONT < 100", this._getWhereClauseForAffectedArea()];
@@ -207,30 +319,40 @@ require([
                 wildfireDataRequest.then(requestSuccessHandler, requestErrorHandler);
             }
 
-            this._getWebMapOperationalLayers = function(response){
-                let layers = response.itemInfo.itemData.operationalLayers.filter(function(layer){
-                    return layer.layerType === 'ArcGISMapServiceLayer' && layer.visibility === true;
+            this._setLayerDefinitionsForWildfireLayer =function(whereClause){
+                const layerDefs = [whereClause];
+                // console.log('setLayerDef', whereClause);
+                this.operationalLayers.forEach(function(layer){
+                    // console.log(layer);
+                    layer.layerObject.setLayerDefinitions(layerDefs);
                 });
-                return layers;
             }
 
-            this._signInToArcGISPortal = function(OAuthAppID){
-                let info = new OAuthInfo({
-                    appId: OAuthAppID,
-                    popup: false
+            this._getWebMapOperationalLayers = function(response){
+                const operationalLayers = response.itemInfo.itemData.operationalLayers.filter(function(layer){
+                    return layer.layerType === 'ArcGISMapServiceLayer' && layer.visibility === true;
                 });
-                esriId.registerOAuthInfos([info]);
-        
-                new arcgisPortal.Portal(info.portalUrl).signIn()
-                .then(function(portalUser){
-                    // console.log("Signed in to the portal: ", portalUser);
-                })     
-                .otherwise(
-                    function (error){
-                        console.log("Error occurred while signing in: ", error);
-                    }
-                );  
+                // console.log('renderer.breaks', operationalLayers[0].layerObject.layerDrawingOptions[0].renderer.breaks);
+                return operationalLayers;
             }
+
+            // this._signInToArcGISPortal = function(OAuthAppID){
+            //     let info = new OAuthInfo({
+            //         appId: OAuthAppID,
+            //         popup: false
+            //     });
+            //     esriId.registerOAuthInfos([info]);
+        
+            //     new arcgisPortal.Portal(info.portalUrl).signIn()
+            //     .then(function(portalUser){
+            //         // console.log("Signed in to the portal: ", portalUser);
+            //     })     
+            //     .otherwise(
+            //         function (error){
+            //             console.log("Error occurred while signing in: ", error);
+            //         }
+            //     );  
+            // }
         }
 
         function populateArrayChartForWildfires(wildfireData){
@@ -442,6 +564,12 @@ require([
 
         $('.toggle-suggestion-list-btn').on('click', toggleSuggestionListBtnOnClickHandler);
 
+
+        wildfireModel = new WildFireDataModel();
+
+        //initialize app
+        wildFireVizApp = new WildFireVizApp();
+        wildFireVizApp.startUp();
     });
 
 });
