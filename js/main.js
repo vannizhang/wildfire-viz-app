@@ -7,6 +7,10 @@ require([
     "esri/geometry/Point",
     "esri/geometry/Multipoint",
     "esri/SpatialReference",
+
+    "esri/layers/LayerDrawingOptions",
+    "esri/renderers/ClassBreaksRenderer",
+    "esri/symbols/PictureMarkerSymbol",
     "dojo/domReady!"
 ], function(
     arcgisUtils, 
@@ -16,7 +20,11 @@ require([
     esriId,
     Point,
     Multipoint,
-    SpatialReference
+    SpatialReference,
+
+    LayerDrawingOptions,
+    ClassBreaksRenderer,
+    PictureMarkerSymbol
 ){
     $(document).ready(function () {
         // Enforce strict mode
@@ -24,11 +32,80 @@ require([
 
         // App Config Data
         const WEB_MAP_ID = "60f04046d1dc4cf7a8ff66729d872999";
-        const REQUEST_URL_WILDFIRE_ACTIVITY = "https://utility.arcgis.com/usrsvcs/servers/141efcbd82fd4c129f5b784c2bc85229/rest/services/LiveFeeds/Wildfire_Activity/MapServer/0/query";
-        const OAUTH_APP_ID = "5LTx4lRbinywSMvI";
+        const WILDFIRE_ACTIVITY_BASE_URL = "https://utility.arcgis.com/usrsvcs/servers/141efcbd82fd4c129f5b784c2bc85229/rest/services/LiveFeeds/Wildfire_Activity/MapServer";
+        const REQUEST_URL_WILDFIRE_ACTIVITY = WILDFIRE_ACTIVITY_BASE_URL + "/0/query";
+        const REQUEST_URL_WILDFIRE_GENERATE_RENDERER = WILDFIRE_ACTIVITY_BASE_URL + "/dynamicLayer/generateRenderer";
+        // const OAUTH_APP_ID = "5LTx4lRbinywSMvI";
         const AFFECTED_AREA_FIELD_NAME = 'AREA_';
         const PCT_CONTAINED_FIELD_NAME = 'PER_CONT';
         const FIRE_NAME_FIELD_NAME = 'FIRE_NAME';
+
+        const wildfireLayerSymbolsLookup = {
+            "default": [
+                {
+                    "url": "https://static.arcgis.com/images/Symbols/Firefly/FireflyB17.png",
+                    "type":"picturemarkersymbol",
+                    "height": 15,
+                    "width": 15,
+                },
+                {
+                    "url": "https://static.arcgis.com/images/Symbols/Firefly/FireflyB17.png",
+                    "type":"picturemarkersymbol",
+                    "height": 25,
+                    "width": 25,
+                },
+                {
+                    "url": "https://static.arcgis.com/images/Symbols/Firefly/FireflyB17.png",
+                    "type":"picturemarkersymbol",
+                    "height": 35,
+                    "width": 35,
+                },
+                {
+                    "url": "https://static.arcgis.com/images/Symbols/Firefly/FireflyB17.png",
+                    "type":"picturemarkersymbol",
+                    "height": 45,
+                    "width": 45,
+                },
+                {
+                    "url": "https://static.arcgis.com/images/Symbols/Firefly/FireflyB17.png",
+                    "type":"picturemarkersymbol",
+                    "height": 55,
+                    "width": 55,
+                },
+            ],
+            "background": [
+                {
+                    "url": "https://static.arcgis.com/images/Symbols/Firefly/FireflyC1.png",
+                    "type":"picturemarkersymbol",
+                    "height": 25,
+                    "width": 25,
+                },
+                {
+                    "url": "https://static.arcgis.com/images/Symbols/Firefly/FireflyC1.png",
+                    "type":"picturemarkersymbol",
+                    "height": 35,
+                    "width": 35,
+                },
+                {
+                    "url": "https://static.arcgis.com/images/Symbols/Firefly/FireflyC1.png",
+                    "type":"picturemarkersymbol",
+                    "height": 45,
+                    "width": 45,
+                },
+                {
+                    "url": "https://static.arcgis.com/images/Symbols/Firefly/FireflyC1.png",
+                    "type":"picturemarkersymbol",
+                    "height": 55,
+                    "width": 55,
+                },
+                {
+                    "url": "https://static.arcgis.com/images/Symbols/Firefly/FireflyC1.png",
+                    "type":"picturemarkersymbol",
+                    "height": 65,
+                    "width": 65,
+                },
+            ]
+        };
 
         let wildfireModel = null;
         let wildFireVizApp = null;
@@ -42,7 +119,6 @@ require([
             // the renderer used by wildfire activity layer were generated using the "Affected AREA" field in the AGOL Map Viewer, we need to store the classification breaks info
             // so that we can filter the wildfires based on the selected "Affected Area"
             this.affectedAreaRendererBreaks = []; 
-
 
             this.setName = (nameStr='')=>{
                 this.name = nameStr
@@ -63,11 +139,11 @@ require([
                         'isVisible': true
                     };
                 });
-                console.log(this.affectedAreaRendererBreaks);
+                // console.log(this.affectedAreaRendererBreaks);
             };
 
             this.setAffectedAreaRendererVisibilityByIndex = (index=-1, isVisible)=>{
-                if(index){
+                if(index !== -1){
                     this.affectedAreaRendererBreaks[index].isVisible = isVisible;
                 }
             }
@@ -78,7 +154,7 @@ require([
                 // the default one is 'PER_CONT < 100' so it always exclude the wildfires that are 100% contained
                 const whereClauseForPctContained = PCT_CONTAINED_FIELD_NAME + " < 100";
 
-                const arrOfWhereClauses = [
+                let arrOfWhereClauses = [
                     whereClauseForPctContained
                 ];
             
@@ -100,14 +176,11 @@ require([
                         ? visibleRendererClasses.map((item, idx)=>{
                             const minVal = item.breakInfo[0];
                             const maxVal = item.breakInfo[1];
-                            // if not last item, use "(use area >= min AND area < max)", otherwise, just use "(area >= min)"
-                            const whereClauseStr = (idx !== visibleRendererClasses.length - 1) 
-                                ? `( ${AFFECTED_AREA_FIELD_NAME} >= ${minVal} AND ${AFFECTED_AREA_FIELD_NAME} < ${maxVal} )`
-                                : `( ${AFFECTED_AREA_FIELD_NAME} >= ${minVal} )`;
+                            const whereClauseStr = `( ${AFFECTED_AREA_FIELD_NAME} >= ${minVal} AND ${AFFECTED_AREA_FIELD_NAME} < ${maxVal} )`;
                             return whereClauseStr;
                         }).join(' OR ')
-                        : `( ${AFFECTED_AREA_FIELD_NAME} == -1 )`;
-                    
+                        : `${AFFECTED_AREA_FIELD_NAME} = -1 `;
+
                     arrOfWhereClauses.push(whereClauseStrForVisibleRendererClasses);
                 }
 
@@ -115,6 +188,11 @@ require([
                     const whereClauseForName = `${FIRE_NAME_FIELD_NAME} = '${this.name}'`
                     arrOfWhereClauses.push(whereClauseForName);
                 }
+
+                // add bracket to each where clause
+                arrOfWhereClauses = arrOfWhereClauses.map(item=>{
+                    return `(${item})`;
+                });
 
                 return arrOfWhereClauses.join(' AND ');
             };
@@ -132,37 +210,30 @@ require([
 
                 // add geometry to params using extent
                 if(this.extent){
-                    const extentJSON = JSON.stringify(extent.toJson());
+                    const extentJSON = JSON.stringify(this.extent.toJson());
                     params.geometry = extentJSON;
                     params.geometryType = "esriGeometryEnvelope";
                 }
 
                 return params;
-            }
+            };
 
-            // this.getRenderDefinitionExpression = ()=>{
-            //     let defExp = '';
-            //     return defExp;
-            // }
         };
                 
-        function WildFireVizApp(){
+        const WildFireVizApp = function(){
             // let app = this;
             this.map = null;
             this.operationalLayers = []; // layers related to wildfire activities
             this.arrOfAllWildfires = [];
-            this.selectedFireName = '';
-            this.affectedAreaFilterData = [
-                {'min': 110720, 'max': Number.POSITIVE_INFINITY, 'checked': true},
-                {'min': 40906, 'max': 110720, 'checked': true},
-                {'min': 11067, 'max': 40906, 'checked': true},
-                {'min': 0, 'max': 11067, 'checked': true},
-            ];
+            this.wildfireClassBreakRendererInfo = null;
             
             this.startUp = function(){
-                // this._signInToArcGISPortal(OAUTH_APP_ID);
-                this._initWebMapByID(WEB_MAP_ID);
-            }
+                // get the class break info that will be used to render the wildfire activity layer
+                this.generateClassBreakRendererInfo(AFFECTED_AREA_FIELD_NAME, (response)=>{
+                    this.setWildfireClassBreakRendererInfo(response);
+                    this._initWebMapByID(WEB_MAP_ID);
+                });
+            };
 
             this._initWebMapByID = function(webMapID){
                 arcgisUtils.createMap(webMapID, "mapDiv").then(response=>{
@@ -170,14 +241,16 @@ require([
                     this.map = response.map;
                     this._addExtentChangeEventHandlerToMap(this.map);
 
-                    // get the operation layers for wildfire activity
+                    // set the operation layers for wildfire activity
                     const operationalLayers = this._getWebMapOperationalLayers(response);
                     const wildfireLayerRendererBreaksInfo = operationalLayers[0].layerObject.layerDrawingOptions[0].renderer.breaks;
                     this.operationalLayers = operationalLayers;
                     wildfireModel.setAffectedAreaRendererBreaks(wildfireLayerRendererBreaksInfo);
+                    // console.log(operationalLayers[0]);
 
                     // load all wildfire
-                    this._queryWildfireData(this._getQueryParams(null, null, true), fullListOfWildfires=>{
+                    const queryParams = wildfireModel.getQueryParams(true);
+                    this._queryWildfireData(queryParams, fullListOfWildfires=>{
                         // console.log('fullListOfWildfires', fullListOfWildfires);
                         this._setArrOfAllWildfires(fullListOfWildfires);
                         this._zoomToExtentOfAllFires(fullListOfWildfires);
@@ -187,34 +260,16 @@ require([
             }
 
             this.searchWildfire = function(options={}, onSuccessHandler){
-                let extent = options.extent || this.map.extent;
-                let whereClause = options.whereClause || null;
                 onSuccessHandler = onSuccessHandler || populateArrayChartForWildfires;
-
-                let extentJSON = JSON.stringify(extent.toJson());
-                let queryParams = this._getQueryParams(whereClause, extentJSON);
+                const queryParams = wildfireModel.getQueryParams(); // this._getQueryParams(whereClause, extentJSON);
 
                 this._setLayerDefinitionsForWildfireLayer(queryParams.where);
                 this._queryWildfireData(queryParams, onSuccessHandler);
             }
 
-            this.updateAffectedAreaFilterData = function(arrayOfFilterStatus){
-                this.affectedAreaFilterData.forEach(function(d,i){
-                    d.checked = arrayOfFilterStatus[i]
-                });
-                let affectedAreaWhereClause = this._getWhereClauseForAffectedArea();
-                // console.log(affectedAreaWhereClause);
-                this.searchWildfire();
-            }
-
-            this.setSelectedFireName = function(value=''){
-                this.selectedFireName = value;
-                toggleSearchBtnIcon();
-            }
-
-            this.getSelectedFireName = function(){
-                return this.selectedFireName;
-            }
+            this.setWildfireClassBreakRendererInfo = function(classBreakRendererInfo){
+                this.wildfireClassBreakRendererInfo = classBreakRendererInfo;
+            };
 
             this._setArrOfAllWildfires = function(wildfires){
                 this.arrOfAllWildfires = wildfires;
@@ -227,76 +282,6 @@ require([
                         return d.attributes[FIRE_NAME_FIELD_NAME];
                     })
                 return arrOfAllWildfires;
-            }
-
-            this._zoomToExtentOfAllFires = function(fullListOfWildfires){
-                let arrOfWildfirePointLocation = fullListOfWildfires.map(function(d){
-                    return [d.geometry.x, d.geometry.y];
-                });
-                let multipointForAllWildfires = new Multipoint(new SpatialReference({wkid:102100}));
-                multipointForAllWildfires.points = arrOfWildfirePointLocation;
-                this.map.setExtent(multipointForAllWildfires.getExtent(), true);
-            }
-
-            this._getWhereClauseForAffectedArea = function(){this
-                let arrOfWhereClauses = [];
-                this.affectedAreaFilterData.forEach(function(d){                    
-                    if(d.checked){
-                        let condition1 = AFFECTED_AREA_FIELD_NAME + ' >= ' + d.min;
-                        let condition2 = (d.max !== Number.POSITIVE_INFINITY) ? AFFECTED_AREA_FIELD_NAME + ' < ' + d.max : '';
-                        let whereClause = [condition1, condition2].filter(function(condition){
-                            return condition !== '';
-                        }).join(' AND ');
-                        arrOfWhereClauses.push(`(${whereClause})`);
-                    }
-                });
-                // if all check boxes are unchecked, add a fake condition so no wildfires will be returned
-                if(!arrOfWhereClauses.length){
-                    arrOfWhereClauses.push(AFFECTED_AREA_FIELD_NAME + ' = -999');
-                }
-                return arrOfWhereClauses.join(' OR ');
-            }
-
-            this._getFireNameFromInput = function(){
-                // let fireName = $('.fire-name-search-input').val();
-                let fireName = this.getSelectedFireName();
-                let whereClauseForFireName = fireName ? `${FIRE_NAME_FIELD_NAME} = '${fireName}'` : null;
-                return whereClauseForFireName;
-            }
-
-            this._addExtentChangeEventHandlerToMap = function(map){
-                map.on('extent-change', evt=>{
-                    const currentMapExtent = evt.extent;
-                    wildfireModel.setExtent(currentMapExtent);
-
-                    this.searchWildfire({"extent": evt.extent});
-                }); 
-            }
-
-            this._getQueryParams = function(whereClause, searchExtent, returnGeometry=false){
-                let params = {
-                    f: "json",
-                    outFields: "*",
-                    returnGeometry: returnGeometry
-                };
-                let arrOfWhereClause = ["PER_CONT < 100", this._getWhereClauseForAffectedArea()];
-                let fireNameFromInput = this._getFireNameFromInput();
-                if(fireNameFromInput){
-                    arrOfWhereClause.push(fireNameFromInput);
-                }
-                arrOfWhereClause = arrOfWhereClause.map(function(item){
-                    return '(' + item + ')';
-                })
-                whereClause = arrOfWhereClause.join(" AND ");
-                params.where = whereClause;
-
-                if(searchExtent){
-                    params.geometry = searchExtent;
-                    params.geometryType = "esriGeometryEnvelope";
-                }
-
-                // console.log(params);
-                return params;
             }
 
             this._queryWildfireData = function(params, callback){
@@ -317,7 +302,7 @@ require([
                 }
         
                 wildfireDataRequest.then(requestSuccessHandler, requestErrorHandler);
-            }
+            };
 
             this._setLayerDefinitionsForWildfireLayer =function(whereClause){
                 const layerDefs = [whereClause];
@@ -326,34 +311,102 @@ require([
                     // console.log(layer);
                     layer.layerObject.setLayerDefinitions(layerDefs);
                 });
-            }
+            };
 
             this._getWebMapOperationalLayers = function(response){
                 const operationalLayers = response.itemInfo.itemData.operationalLayers.filter(function(layer){
-                    return layer.layerType === 'ArcGISMapServiceLayer' && layer.visibility === true;
+                    return layer.layerType === 'ArcGISMapServiceLayer';
                 });
+
+                // update the drawing options to use firefly style
+                operationalLayers.forEach(item=>{
+                    this.setLayerDrawingOptions(item);
+                });
+
                 // console.log('renderer.breaks', operationalLayers[0].layerObject.layerDrawingOptions[0].renderer.breaks);
                 return operationalLayers;
-            }
+            };
 
-            // this._signInToArcGISPortal = function(OAuthAppID){
-            //     let info = new OAuthInfo({
-            //         appId: OAuthAppID,
-            //         popup: false
-            //     });
-            //     esriId.registerOAuthInfos([info]);
+            this.getWildfireLayerRendererByTitle = function(layerTitle){
+                const rendererInfo = JSON.parse(JSON.stringify(this.wildfireClassBreakRendererInfo));
+                const symbolsInfo = (layerTitle === 'Active_Fire_Report') ? wildfireLayerSymbolsLookup['default'] : wildfireLayerSymbolsLookup['background'];
+                
+                rendererInfo.classBreakInfos = rendererInfo.classBreakInfos.map(function(info, index){
+                    const symbol = new PictureMarkerSymbol(symbolsInfo[index]);
+                    info.symbol = symbol.toJson();
+                    return info;
+                });
+
+                return new ClassBreaksRenderer(rendererInfo);
+            };
+
+            this.setLayerDrawingOptions = function(operationalLayer){
+                const layer = operationalLayer.layerObject;
+                const layerTitle = operationalLayer.title;
+                const layerDrawingOptions = [];
+                const layerDrawingOption = new LayerDrawingOptions();
+                const layerOpacity = (layerTitle === 'Active_Fire_Report') ? .75 : .5;
+
+                layerDrawingOption.renderer = this.getWildfireLayerRendererByTitle(layerTitle);
+                layerDrawingOptions[0] = layerDrawingOption;
+                layer.setLayerDrawingOptions(layerDrawingOptions);
+                layer.setOpacity(layerOpacity);
+            };
+
+            this._zoomToExtentOfAllFires = function(fullListOfWildfires){
+                let arrOfWildfirePointLocation = fullListOfWildfires.map(function(d){
+                    return [d.geometry.x, d.geometry.y];
+                });
+                let multipointForAllWildfires = new Multipoint(new SpatialReference({wkid:102100}));
+                multipointForAllWildfires.points = arrOfWildfirePointLocation;
+                this.map.setExtent(multipointForAllWildfires.getExtent(), true);
+            };
+
+            this._addExtentChangeEventHandlerToMap = function(map){
+                map.on('extent-change', evt=>{
+                    const currentMapExtent = evt.extent;
+                    wildfireModel.setExtent(currentMapExtent);
+                    this.searchWildfire();
+                }); 
+            };
+
+            this.generateClassBreakRendererInfo = function(classificationField, callback){
+
+                const params = {
+                    classificationDef: JSON.stringify({
+                        "type":"classBreaksDef",
+                        "classificationField": classificationField,
+                        "classificationMethod":"esriClassifyNaturalBreaks",
+                        "breakCount":5
+                    }),
+                    layer: JSON.stringify({
+                        "source": {
+                            "type":"mapLayer",
+                            "mapLayerId":0
+                        }
+                    }),
+                    f: 'json',
+                    where: '',
+                };
+
+                const request = esriRequest({
+                    url: REQUEST_URL_WILDFIRE_GENERATE_RENDERER,
+                    content: params,
+                    handleAs: "json",
+                });
+
+                function requestSuccessHandler(response) {
+                    callback(response);
+                }
         
-            //     new arcgisPortal.Portal(info.portalUrl).signIn()
-            //     .then(function(portalUser){
-            //         // console.log("Signed in to the portal: ", portalUser);
-            //     })     
-            //     .otherwise(
-            //         function (error){
-            //             console.log("Error occurred while signing in: ", error);
-            //         }
-            //     );  
-            // }
-        }
+                function requestErrorHandler(error) {
+                    console.log("Error: ", error.message);
+                }
+        
+                request.then(requestSuccessHandler, requestErrorHandler);
+            };
+
+        };
 
         function populateArrayChartForWildfires(wildfireData){
             // console.log('calling populateArrayChartForWildfires', wildfireData);
@@ -451,7 +504,10 @@ require([
             suggestionListContainer.find('.suggestion-item').on('click', function(evt){
                 var itemText = $(this).text();
                 $('.fire-name-search-input').val(itemText);
-                wildFireVizApp.setSelectedFireName(itemText);
+                // wildFireVizApp.setSelectedFireName(itemText);
+                wildfireModel.setName(itemText);
+
+                toggleSearchBtnIcon(itemText);
                 toggleSuggestionList(false);
                 // suggestionListContainer.addClass('hide');
                 wildFireVizApp.searchWildfire();
@@ -473,28 +529,31 @@ require([
                     return d.match(textToSearch);
                 }).splice(0, 5);
             } 
-            wildFireVizApp.setSelectedFireName(currentText);
+            // wildFireVizApp.setSelectedFireName(currentText);
+            wildfireModel.setName(currentText);
+
+            toggleSearchBtnIcon(currentText);
             populateSuggestionList(matchedNames, currentText);
         }
 
         function affectedAreaFilterOnClickHandler(evt){
-            var targetCBox = $(this);
-            var isTargetCBoxChecked = targetCBox.hasClass('fa-check-square-o');
-            var arrOfAreaFilterStatus = [];
-            if(isTargetCBoxChecked){
-                targetCBox.removeClass('fa-check-square-o');
-                targetCBox.addClass('fa-square-o');
-            } else {
+            const targetFilter = $(this);
+            targetFilter.toggleClass('checked ');
+
+            const targetFilterIndex = +targetFilter.attr('data-filter-index');
+            const isTargetFilterChecked = targetFilter.hasClass('checked');
+
+            const targetCBox = targetFilter.find('.fa');
+            if(isTargetFilterChecked){
                 targetCBox.addClass('fa-check-square-o');
                 targetCBox.removeClass('fa-square-o');
+            } else {
+                targetCBox.removeClass('fa-check-square-o');
+                targetCBox.addClass('fa-square-o');
             }
 
-            $('.affected-area-filter').each(function(element){
-                let isCBoxChecked = $(this).find('.fa').hasClass('fa-check-square-o'); 
-                arrOfAreaFilterStatus.push(isCBoxChecked);
-            });
-
-            wildFireVizApp.updateAffectedAreaFilterData(arrOfAreaFilterStatus);
+            wildfireModel.setAffectedAreaRendererVisibilityByIndex(targetFilterIndex, isTargetFilterChecked);
+            wildFireVizApp.searchWildfire();
         }
 
         function searchBtnOnClickHandler(evt){
@@ -504,7 +563,10 @@ require([
 
             if(isClickToClickSearchText){
                 $('.fire-name-search-input').val('');
-                wildFireVizApp.setSelectedFireName();
+                // wildFireVizApp.setSelectedFireName(null);
+                wildfireModel.setName(null);
+
+                toggleSearchBtnIcon(null);
                 wildFireVizApp.searchWildfire();
             } 
         }
@@ -543,8 +605,8 @@ require([
             updateToggleSuggestionListBtnIcon();
         }
 
-        function toggleSearchBtnIcon(){
-            let selectedFireName = wildFireVizApp.getSelectedFireName();
+        function toggleSearchBtnIcon(selectedFireName){
+            // let selectedFireName = wildFireVizApp.getSelectedFireName();
             let searchBtn = $('.search-by-name-btn');
             let searchBtnIcon = searchBtn.find('.fa');
             if(selectedFireName){
@@ -558,16 +620,23 @@ require([
         }
 
         //attach app event handlers
-        $('.affected-area-filter').on('click', '.fa', affectedAreaFilterOnClickHandler);
+        $('.js-affected-area-filter').on('click', affectedAreaFilterOnClickHandler);
 
         $('.search-by-name-btn').on('click', searchBtnOnClickHandler);
 
         $('.toggle-suggestion-list-btn').on('click', toggleSuggestionListBtnOnClickHandler);
 
 
-        wildfireModel = new WildFireDataModel();
+        const AppView = function(){
+
+        };
+
+        const AppController = function(){
+
+        };
 
         //initialize app
+        wildfireModel = new WildFireDataModel();
         wildFireVizApp = new WildFireVizApp();
         wildFireVizApp.startUp();
     });
