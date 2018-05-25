@@ -155,3 +155,34 @@
 .search-input-btn:nth-child(1){
     border-right: solid 1px #B77600;
 }
+
+.esriPopup .contentPane {
+    background-color: rgba(26, 0, 17, 0.75);
+    color: #B77600;
+    /* max-width: 250px; */
+    line-height: 24px;
+    font-size: 16px;
+    /* font-weight: 100; */
+}
+
+.esriPopup .esriPopupWrapper {
+    box-shadow: none;
+}
+
+.esriPopup .actionsPane {
+    display: none;
+}
+
+.esriPopup .titlePane {
+    display: none;
+}
+
+.esriPopup .pointer,
+.esriPopup .outerPointer {
+    display: none !important;
+}
+
+.customized-popup-header {
+    border-bottom: solid 1px rgba(183, 118, 0, 0.5);
+    padding-bottom: .3rem;
+}

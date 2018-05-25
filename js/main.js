@@ -107,9 +107,6 @@ require([
             ]
         };
 
-        let wildfireModel = null;
-        let wildFireVizApp = null;
-
         const WildFireDataModel = function(){
 
             this.name = ''; 
@@ -246,7 +243,7 @@ require([
                     const wildfireLayerRendererBreaksInfo = operationalLayers[0].layerObject.layerDrawingOptions[0].renderer.breaks;
                     this.operationalLayers = operationalLayers;
                     wildfireModel.setAffectedAreaRendererBreaks(wildfireLayerRendererBreaksInfo);
-                    // console.log(operationalLayers[0]);
+                    // console.log(wildfireLayerRendererBreaksInfo);
 
                     // load all wildfire
                     const queryParams = wildfireModel.getQueryParams(true);
@@ -454,13 +451,17 @@ require([
                 var selectedFeature = wildfireData[itemIdx];
                 var selectedFeatureGeom = new Point( {"x": selectedFeature.attributes.LONGITUDE, "y": selectedFeature.attributes.LATITUDE, "spatialReference": {"wkid": 4326 } });
                 var contentHtmlStr = `
-                    <span>The ${selectedFeature.attributes[FIRE_NAME_FIELD_NAME]} fire is estimated to be ${selectedFeature.attributes.AREA_} ACRES and ${selectedFeature.attributes.PER_CONT}% contained.</span>
-                    <br><br>
-                    <span>Data Source: NIFC</span><br>
-                    <span>Start Date: ${moment(selectedFeature.attributes.START_DATE).format("MMMM Do, YYYY")}</span>
+                    <div class='customized-popup-header'>
+                        <span class='font-size--3'>Start Date: ${moment(selectedFeature.attributes.START_DATE).format("MMMM Do, YYYY")}</span>
+                        <span class='icon-ui-close avenir-bold font-size--3 right'></span>
+                    </div>
+                    <div class='leader-quarter trailer-quarter'>
+                        <span>
+                            The ${selectedFeature.attributes[FIRE_NAME_FIELD_NAME]} fire is estimated to be ${selectedFeature.attributes.AREA_} acres
+                            and <strong>${selectedFeature.attributes.PER_CONT}%</strong> contained.
+                        </span><br>
+                    <div>
                 `;
-
-                wildFireVizApp.map.infoWindow.setTitle(selectedFeature.attributes[FIRE_NAME_FIELD_NAME]);
                 wildFireVizApp.map.infoWindow.setContent(contentHtmlStr);
                 wildFireVizApp.map.infoWindow.show(selectedFeatureGeom);
             });
@@ -636,8 +637,8 @@ require([
         };
 
         //initialize app
-        wildfireModel = new WildFireDataModel();
-        wildFireVizApp = new WildFireVizApp();
+        const wildfireModel = new WildFireDataModel();
+        const wildFireVizApp = new WildFireVizApp();
         wildFireVizApp.startUp();
     });
 
