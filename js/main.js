@@ -8,6 +8,9 @@ require([
     "esri/geometry/Multipoint",
     "esri/SpatialReference",
 
+    "esri/tasks/IdentifyTask",
+    "esri/tasks/IdentifyParameters",
+
     "esri/layers/LayerDrawingOptions",
     "esri/renderers/ClassBreaksRenderer",
     "esri/symbols/PictureMarkerSymbol",
@@ -21,6 +24,8 @@ require([
     Point,
     Multipoint,
     SpatialReference,
+
+    IdentifyTask, IdentifyParameters,
 
     LayerDrawingOptions,
     ClassBreaksRenderer,
@@ -220,8 +225,10 @@ require([
         const WildFireVizApp = function(){
             // let app = this;
             this.map = null;
+            this.identifyTask = null;
+            this.identifyParams = null;
             this.operationalLayers = []; // layers related to wildfire activities
-            this.arrOfAllWildfires = [];
+            this.allWildfires = [];
             this.wildfireClassBreakRendererInfo = null;
             
             this.startUp = function(){
@@ -232,29 +239,40 @@ require([
                 });
             };
 
+            this.setMap = function(map){
+                this.map = map;
+            };
+
+            // set the operation layers for wildfire activity
+            this.setOperationalLayers = function(webMapResponse){
+                const operationalLayers = this._getWebMapOperationalLayers(webMapResponse);
+                this.operationalLayers = operationalLayers;
+                wildfireModel.setAffectedAreaRendererBreaks(operationalLayers[0].layerObject.layerDrawingOptions[0].renderer.breaks);
+            };
+
             this._initWebMapByID = function(webMapID){
                 arcgisUtils.createMap(webMapID, "mapDiv").then(response=>{
-                    // set map object for the app
-                    this.map = response.map;
-                    this._addExtentChangeEventHandlerToMap(this.map);
+                    // set map using the map object from response
+                    const map = response.map;
+                    this.setMap(map);
+                    this.setMapEeventHandlers(map);
+                    this.setIdentifyTaskAndParams(map);
+                    this.setOperationalLayers(response);
 
-                    // set the operation layers for wildfire activity
-                    const operationalLayers = this._getWebMapOperationalLayers(response);
-                    const wildfireLayerRendererBreaksInfo = operationalLayers[0].layerObject.layerDrawingOptions[0].renderer.breaks;
-                    this.operationalLayers = operationalLayers;
-                    wildfireModel.setAffectedAreaRendererBreaks(wildfireLayerRendererBreaksInfo);
-                    // console.log(wildfireLayerRendererBreaksInfo);
-
-                    // load all wildfire
-                    const queryParams = wildfireModel.getQueryParams(true);
-                    this._queryWildfireData(queryParams, fullListOfWildfires=>{
-                        // console.log('fullListOfWildfires', fullListOfWildfires);
-                        this._setArrOfAllWildfires(fullListOfWildfires);
-                        this._zoomToExtentOfAllFires(fullListOfWildfires);
-                        addSearchInputOnTypeEventHandler();
-                    })
+                    this.mapOnReadyHandler();
                 });
-            }
+            };
+
+            // load and render all wildfire once map and operational layers are ready
+            this.mapOnReadyHandler = function(){
+                const queryParams = wildfireModel.getQueryParams(true);
+                this._queryWildfireData(queryParams, fullListOfWildfires=>{
+                    // console.log('fullListOfWildfires', fullListOfWildfires);
+                    this._setAllWildfires(fullListOfWildfires);
+                    this._zoomToExtentOfAllFires(fullListOfWildfires);
+                    addSearchInputOnTypeEventHandler();
+                });
+            };
 
             this.searchWildfire = function(options={}, onSuccessHandler){
                 onSuccessHandler = onSuccessHandler || populateArrayChartForWildfires;
@@ -268,18 +286,18 @@ require([
                 this.wildfireClassBreakRendererInfo = classBreakRendererInfo;
             };
 
-            this._setArrOfAllWildfires = function(wildfires){
-                this.arrOfAllWildfires = wildfires;
-            }
+            this._setAllWildfires = function(wildfires){
+                this.allWildfires = wildfires;
+            };
 
             this.getArrOfAllWildfires = function(fireNameOnly=false){
-                let arrOfAllWildfires = (!fireNameOnly)
-                    ? this.arrOfAllWildfires
-                    : this.arrOfAllWildfires.map(d=>{
+                const arrOfAllWildfires = (!fireNameOnly)
+                    ? this.allWildfires
+                    : this.allWildfires.map(d=>{
                         return d.attributes[FIRE_NAME_FIELD_NAME];
                     })
                 return arrOfAllWildfires;
-            }
+            };
 
             this._queryWildfireData = function(params, callback){
                 let wildfireDataRequest = esriRequest({
@@ -359,10 +377,34 @@ require([
                 this.map.setExtent(multipointForAllWildfires.getExtent(), true);
             };
 
-            this._addExtentChangeEventHandlerToMap = function(map){
-                map.on('extent-change', evt=>{
-                    const currentMapExtent = evt.extent;
-                    wildfireModel.setExtent(currentMapExtent);
+            this.execIdentifyTask = function(mapPoint){
+                this.identifyParams.geometry = mapPoint;
+                this.identifyParams.mapExtent = this.map.extent;
+                this.identifyTask.execute(this.identifyParams, (results)=>{
+                    console.log(results);
+                })
+            }
+
+            this.setIdentifyTaskAndParams = function(map){
+                const identifyParams = new IdentifyParameters();
+                identifyParams.tolerance = 3;
+                identifyParams.returnGeometry = false;
+                identifyParams.layerIds = [0];
+                identifyParams.width = map.width;
+                identifyParams.height = map.height;
+
+                this.identifyParams = identifyParams;
+                this.identifyTask = new IdentifyTask(WILDFIRE_ACTIVITY_BASE_URL);
+            };
+
+            this.setMapEeventHandlers = function(map){
+
+                map.on("click", (evt)=>{
+                    this.execIdentifyTask(evt.mapPoint);
+                });
+
+                map.on('extent-change', (evt)=>{
+                    wildfireModel.setExtent(evt.extent);
                     this.searchWildfire();
                 }); 
             };
@@ -403,6 +445,7 @@ require([
                 request.then(requestSuccessHandler, requestErrorHandler);
             };
 
+            this.startUp();
         };
 
         function populateArrayChartForWildfires(wildfireData){
@@ -639,7 +682,7 @@ require([
         //initialize app
         const wildfireModel = new WildFireDataModel();
         const wildFireVizApp = new WildFireVizApp();
-        wildFireVizApp.startUp();
+        // wildFireVizApp.startUp();
     });
 
 });
