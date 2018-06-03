@@ -149,8 +149,8 @@ require([
             };
 
             this.setAffectedAreaRendererBreaks = (breaksInfo=[])=>{
-                this.affectedAreaRendererBreaks = breaksInfo.map(breakInfo=>{
-                    if(breakInfo[0] === breakInfo[1]){
+                this.affectedAreaRendererBreaks = breaksInfo.map( (breakInfo, index)=>{
+                    if(index === 0){
                         breakInfo[0] = 0;
                     }
                     return {
@@ -247,6 +247,8 @@ require([
                         outputIdx = idx;
                     }
                 });
+                // console.log(this.affectedAreaRendererBreaks);
+                // console.log(val, outputIdx);
                 return 5 - outputIdx;
             };
 
@@ -823,7 +825,7 @@ require([
                         const fireID = d.attributes[FIELD_NAME_INTERNAL_ID];
 
                         const gridItemHtmlStr = `
-                            <div class="legend-grid-item block trailer-half" data-fire-id="${fireID}">
+                            <div class="legend-grid-item block trailer-half js-zoom-to-fire" data-fire-id="${fireID}">
                                 <div class="legend-icon legend-class-${legendClass}">
                                     <div class='bottom-pct-indicator'>
                                         <div class='highlight-bar' style="width: ${pctContained}%;"></div>
@@ -863,7 +865,7 @@ require([
                                 <div class='card-content'>
                                     <p class='font-size-0 trailer-0 avenir-bold'>${fireName}</p>
                                     <p class='font-size--3 leader-quarter trailer-quarter'>Started on ${startDate}, the affected area is estimated to be ${affectedArea} acres and ${pctContained}% contained. </p>
-                                    <p class='font-size--3 trailer-0 right cursor-pointer' data-fire-id="${fireID}"><span class='icon-ui-map-pin'></span>${stateFullName} (${lat}, ${lon})</p>
+                                    <p class='js-zoom-to-fire font-size--3 trailer-0 right cursor-pointer' data-fire-id="${fireID}"><span class='icon-ui-map-pin'></span>${stateFullName} (${lat}, ${lon})</p>
                                 </div>
                             </div>
                         `;
@@ -879,7 +881,7 @@ require([
             const initEventHandlers = (function(){
                 const $body = $('body');
 
-                $body.on('click', '.legend-grid-item', function(){
+                $body.on('click', '.js-zoom-to-fire', function(){
                     const targetFireID = $(this).attr('data-fire-id');
                     wildFireVizApp.zoomToFire(targetFireID);
                 });
