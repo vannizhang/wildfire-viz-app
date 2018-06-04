@@ -55,6 +55,7 @@ require([
         // dom elements data
         const WILDFIRE_GRID_CONTAINER_ID = 'wildfire-grid-container';
         const WILDFIRE_CARD_CONTAINER_ID = 'wildfire-card-container';
+        const WILDFIRE_TIMELINE_CONTAINER_ID = 'wildfire-timeline-container';
         
         // look up tables
         const wildfireLayerSymbolsLookup = {
@@ -382,12 +383,17 @@ require([
                 return outputFires;
             };
 
+            this.getFireIdByName = function(fireName){
+                const fireData = this.getListOfFires(false, FIRE_NAME_FIELD_NAME, fireName)[0];
+                return fireData ? fireData.attributes[FIELD_NAME_INTERNAL_ID]: '';
+            };
+
             this.showInfoWindow = function(fireID=''){
                 const fireData = this.getFireDataByID(fireID);
                 const fireGeom = this.getFeatureGeometryInWgs84(fireData);
                 const contentHtmlStr = `
                     <div class='customized-popup-header'>
-                        <span class='font-size--3'>Start Date: ${moment(fireData.attributes.START_DATE).format("MMMM Do, YYYY")}</span>
+                        <span class='font-size--3'>Start Date: ${fireData.attributes[FIELD_NAME_START_DAT_FORMATTED]}</span>
                         <span class='js-close-info-window icon-ui-close avenir-bold cursor-pointer font-size--3 right'></span>
                     </div>
                     <div class='leader-quarter trailer-quarter'>
@@ -499,7 +505,9 @@ require([
             this.identifyTaskOnSuccessHandler = (results)=>{
                 if(results.length){
                     const fireName = results[0].value;
-                    this.showInfoWindow(fireName);
+                    const fireID = this.getFireIdByName(fireName);
+                    // console.log(fireID);
+                    this.showInfoWindow(fireID);
                 }
             };
 
@@ -799,16 +807,101 @@ require([
 
             this.wildfireGrids = null;
             this.wildfireCards = null;
-
+            this.wildfireTimeline = null;
+            this.wildfireDataOberver = null;
+            
             this.init = function(){
                 this.wildfireGrids = new WildfiresGrid(WILDFIRE_GRID_CONTAINER_ID);
                 this.wildfireCards = new WildfiresCards(WILDFIRE_CARD_CONTAINER_ID);
+                this.wildfireTimeline = new WildfiresTimeline(WILDFIRE_TIMELINE_CONTAINER_ID);
+                this.initWildfireDataObserser();
+            };
+
+            this.initWildfireDataObserser = function(){
+                this.wildfireDataOberver = new Observable();
+                this.wildfireDataOberver.subscribe(this.wildfireGrids.populate);
+                this.wildfireDataOberver.subscribe(this.wildfireCards.populate);
+                this.wildfireDataOberver.subscribe(this.wildfireTimeline.populate);
             };
 
             this.populateWildfires = function(fires=[]){
-                console.log(fires);
-                this.wildfireGrids.populate(fires);
-                this.wildfireCards.populate(fires);
+                // console.log(fires);
+                // this.wildfireGrids.populate(fires);
+                // this.wildfireCards.populate(fires);
+                this.wildfireDataOberver.notify(fires);
+            };
+
+            const WildfiresTimeline = function(containerID){
+
+                const conatiner = $('#'+containerID);
+
+                const prepareData = function(fires=[]){
+                    const firesByDate = {};
+                    const distinctDates = [];
+
+                    fires.sort((a,b)=>{
+                        return a.attributes[FIELD_NAME_START_DATE] - b.attributes[FIELD_NAME_START_DATE];
+                    });
+
+                    fires.forEach(fire=>{
+                        const date = fire.attributes[FIELD_NAME_START_DATE];
+                        if(firesByDate[date]){
+                            firesByDate[date].fires.push(fire);
+                        } else {
+                            firesByDate[date] = {
+                                startDate: date,
+                                fires: [fire]
+                            };
+                            distinctDates.push(date);
+                        }
+                    });
+
+                    fires = distinctDates.map(d=>{
+                        return firesByDate[d];
+                    });
+
+                    return fires;
+                };
+
+                this.populate = function(fires=[]){
+
+                    fires = prepareData(fires);
+
+                    const timelineItemsHtml = fires.map((d, idx)=>{
+
+                        const startDate = moment(d.startDate).format("MMM Do");
+
+                        const fireInfoHtmlStrs = d.fires.map(fire=>{
+                            const pctContained = fire.attributes[PCT_CONTAINED_FIELD_NAME];
+                            const fireName = fire.attributes[FIRE_NAME_FIELD_NAME];
+                            const affectedArea = fire.attributes[AFFECTED_AREA_FIELD_NAME];
+                            const legendClass = wildfireModel.getRendererBreakIndex(affectedArea);
+                            const fireID = fire.attributes[FIELD_NAME_INTERNAL_ID];
+
+                            const htmlStr = `
+                                <div class='trailer-1 fire-info'>
+                                    <div class='inline-block font-size--3 padding-left-half margin-right-half'><span class='cursor-pointer js-show-info-window js-zoom-to-fire' data-fire-id="${fireID}">${fireName} Fire - ${pctContained}% contained</span></div>
+                                    <div class="legend-icon legend-class-${legendClass}"></div>
+                                </div>
+                            `;
+                            return htmlStr;
+                        }).join('');
+
+                        const timelineItemHtmlStr = `
+                            <div class='timeline-item'>
+                                <div class='date-info font-size--2'>${startDate}</div>
+                                <div class='fire-info-wrap text-right'>
+                                    ${fireInfoHtmlStrs}
+                                </div>
+                            </div>
+                        `;
+
+                        return timelineItemHtmlStr;
+
+                    }).join('');
+                    
+                    conatiner.html(timelineItemsHtml);
+                };
             };
 
             const WildfiresGrid = function(containerID){
@@ -825,7 +918,7 @@ require([
                         const fireID = d.attributes[FIELD_NAME_INTERNAL_ID];
 
                         const gridItemHtmlStr = `
-                            <div class="legend-grid-item block trailer-half js-zoom-to-fire" data-fire-id="${fireID}">
+                            <div class="js-show-info-window block trailer-half js-zoom-to-fire" data-fire-id="${fireID}">
                                 <div class="legend-icon legend-class-${legendClass}">
                                     <div class='bottom-pct-indicator'>
                                         <div class='highlight-bar' style="width: ${pctContained}%;"></div>
@@ -886,12 +979,12 @@ require([
                     wildFireVizApp.zoomToFire(targetFireID);
                 });
 
-                $body.on('mouseenter', '.legend-grid-item', function(){
+                $body.on('mouseenter', '.js-show-info-window', function(){
                     const targetFireID = $(this).attr('data-fire-id');
                     wildFireVizApp.showInfoWindow(targetFireID);
                 });
 
-                $body.on('mouseleave', '.legend-grid-item', function(){
+                $body.on('mouseleave', '.js-show-info-window', function(){
                     wildFireVizApp.hideInforWindow();
                 });
 
@@ -903,6 +996,32 @@ require([
 
             this.init();
         };
+
+        const Observable = function(){
+            // each instance of the Observer class
+            // starts with an empty array of things (observers)
+            // that react to a state change
+            this.observers = [];
+          
+            // add the ability to subscribe to a new object / DOM element
+            // essentially, add something to the observers array
+            this.subscribe = (f)=>{
+              this.observers.push(f);
+            };
+          
+            // add the ability to unsubscribe from a particular object
+            // essentially, remove something from the observers array
+            this.unsubscribe = (f)=>{
+              this.observers = this.observers.filter(subscriber => subscriber !== f);
+            }
+          
+            // update all subscribed objects / DOM elements
+            // and pass some data to each of them
+            this.notify = (data)=>{
+                // console.log('notify', data);
+                this.observers.forEach(observer => observer(data));
+            }
+        }
 
         //initialize app
         const wildfireModel = new WildFireDataModel();
