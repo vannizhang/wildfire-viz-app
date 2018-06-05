@@ -251,4 +251,8 @@
     justify-content: flex-end;
 }
 
+.timeline-month-title {
+    background-color:rgba(103,0,67, .5);
+}
+
 

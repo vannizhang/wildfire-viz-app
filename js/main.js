@@ -839,24 +839,36 @@ require([
                     const firesByDate = {};
                     const distinctDates = [];
 
+                    const compareMonthVal = (d1, d2)=>{
+                        d1 = new Date(d1);
+                        d2 = new Date(d2);
+                        return (d1 && d2 && d1.getMonth() !== d2.getMonth()) ? true: false; 
+                    };
+
                     fires.sort((a,b)=>{
                         return a.attributes[FIELD_NAME_START_DATE] - b.attributes[FIELD_NAME_START_DATE];
                     });
 
                     fires.forEach(fire=>{
                         const date = fire.attributes[FIELD_NAME_START_DATE];
-                        if(firesByDate[date]){
-                            firesByDate[date].fires.push(fire);
-                        } else {
+                        if(!firesByDate[date]){
                             firesByDate[date] = {
                                 startDate: date,
-                                fires: [fire]
+                                fires: [fire],
+                                isFirstItemInMonth: false
                             };
                             distinctDates.push(date);
+                        } else {
+                            firesByDate[date].fires.push(fire);
                         }
                     });
 
-                    fires = distinctDates.map(d=>{
+                    fires = distinctDates.map( (d, idx)=>{
+                        const prevDate = distinctDates[idx - 1];
+                        const isMonFromCurDateDiff = compareMonthVal(d, prevDate);
+                        if(isMonFromCurDateDiff){
+                            firesByDate[d].isFirstItemInMonth = true;
+                        }
                         return firesByDate[d];
                     });
 
@@ -870,6 +882,15 @@ require([
                     const timelineItemsHtml = fires.map((d, idx)=>{
 
                         const startDate = moment(d.startDate).format("MMM Do");
+                        const monthName = moment(d.startDate).format("MMMM");
+
+                        const monthTitleHtmlStr = `
+                            <div class='timeline-month-title text-center'>
+                                <div class='padding-leader-quarter padding-trailer-quarter '>
+                                    <span class'avenir-bold'>${monthName}</span>
+                                </div>
+                            </div>
+                        `;
 
                         const fireInfoHtmlStrs = d.fires.map(fire=>{
                             const pctContained = fire.attributes[PCT_CONTAINED_FIELD_NAME];
@@ -888,6 +909,7 @@ require([
                         }).join('');
 
                         const timelineItemHtmlStr = `
+                            ${d.isFirstItemInMonth ? monthTitleHtmlStr : ''}
                             <div class='timeline-item'>
                                 <div class='date-info font-size--2'>${startDate}</div>
                                 <div class='fire-info-wrap text-right'>
