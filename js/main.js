@@ -14,6 +14,8 @@ require([
     "esri/layers/LayerDrawingOptions",
     "esri/renderers/ClassBreaksRenderer",
     "esri/symbols/PictureMarkerSymbol",
+    // "esri/symbols/SimpleFillSymbol",
+    // "esri/symbols/SimpleLineSymbol",
     "dojo/domReady!"
 ], function(
     arcgisUtils, 
@@ -30,6 +32,8 @@ require([
     LayerDrawingOptions,
     ClassBreaksRenderer,
     PictureMarkerSymbol
+    // SimpleFillSymbol,
+    // SimpleLineSymbol
 ){
     $(document).ready(function () {
         // Enforce strict mode
@@ -456,6 +460,7 @@ require([
                     this.setLayerDrawingOptions(item);
                 });
 
+                // console.log(operationalLayers);
                 // console.log('renderer.breaks', operationalLayers[0].layerObject.layerDrawingOptions[0].renderer.breaks);
                 return operationalLayers;
             };
@@ -473,17 +478,30 @@ require([
                 return new ClassBreaksRenderer(rendererInfo);
             };
 
+            // this.getRendererForFirePerimeter = ()=>{
+            //     return new SimpleFillSymbol(
+            //         SimpleFillSymbol.STYLE_SOLID,
+            //         new SimpleLineSymbol( SimpleLineSymbol.STYLE_SOLID, new Color([103, 0, 67]), 1),
+            //         new Color([125,125,125,0.35])
+            //     );
+            // };
+
             this.setLayerDrawingOptions = function(operationalLayer){
                 const layer = operationalLayer.layerObject;
                 const layerTitle = operationalLayer.title;
-                const layerDrawingOptions = [];
-                const layerDrawingOption = new LayerDrawingOptions();
                 const layerOpacity = (layerTitle === 'Active_Fire_Report') ? .75 : .5;
-
-                layerDrawingOption.renderer = this.getWildfireLayerRendererByTitle(layerTitle);
-                layerDrawingOptions[0] = layerDrawingOption;
+                const layerDrawingOptions = [];
+                const activeFireDrawingOption = this.getLayerDrawingOption(layerTitle);
+                // layerDrawingOption.renderer = this.getWildfireLayerRendererByTitle(layerTitle);
+                layerDrawingOptions[0] = activeFireDrawingOption;
                 layer.setLayerDrawingOptions(layerDrawingOptions);
                 layer.setOpacity(layerOpacity);
+            };
+
+            this.getLayerDrawingOption = (layerTitle)=>{
+                const layerDrawingOption = new LayerDrawingOptions();
+                layerDrawingOption.renderer = this.getWildfireLayerRendererByTitle(layerTitle);
+                return layerDrawingOption;
             };
 
             this.zoomToExtentOfAllFires = function(){
@@ -805,30 +823,51 @@ require([
 
         const AppView = function(){
 
+            // cache dom elements
+            const $numOfFires = $('.val-holder-num-of-fires');
+
+            // fire summary info objects
             this.wildfireGrids = null;
-            this.wildfireCards = null;
             this.wildfireTimeline = null;
-            this.wildfireDataOberver = null;
+            // this.wildfireCards = null;
+
+            // state observers
+            this.fireDataOberver = null;
+            this.fireSummaryInfoVisibilityOberver = null;
             
             this.init = function(){
                 this.wildfireGrids = new WildfiresGrid(WILDFIRE_GRID_CONTAINER_ID);
-                this.wildfireCards = new WildfiresCards(WILDFIRE_CARD_CONTAINER_ID);
+                // this.wildfireCards = new WildfiresCards(WILDFIRE_CARD_CONTAINER_ID);
                 this.wildfireTimeline = new WildfiresTimeline(WILDFIRE_TIMELINE_CONTAINER_ID);
-                this.initWildfireDataObserser();
+
+                this.initFireDataObserser();
+                this.initFireSummaryInfoVisibilityOberver();
             };
 
-            this.initWildfireDataObserser = function(){
-                this.wildfireDataOberver = new Observable();
-                this.wildfireDataOberver.subscribe(this.wildfireGrids.populate);
-                this.wildfireDataOberver.subscribe(this.wildfireCards.populate);
-                this.wildfireDataOberver.subscribe(this.wildfireTimeline.populate);
+            this.initFireDataObserser = function(){
+                this.fireDataOberver = new Observable();
+                this.fireDataOberver.subscribe(this.wildfireGrids.populate);
+                // this.wildfireDataOberver.subscribe(this.wildfireCards.populate);
+                this.fireDataOberver.subscribe(this.wildfireTimeline.populate);
             };
 
             this.populateWildfires = function(fires=[]){
-                // console.log(fires);
-                // this.wildfireGrids.populate(fires);
-                // this.wildfireCards.populate(fires);
-                this.wildfireDataOberver.notify(fires);
+                this.fireDataOberver.notify(fires);
+                this.updateNumOfFiresVal(fires.length);
+            };
+
+            this.updateNumOfFiresVal = function(count=0){
+                $numOfFires.text(count);
+            }
+
+            this.initFireSummaryInfoVisibilityOberver = function(){
+                this.fireSummaryInfoVisibilityOberver = new Observable();
+                this.fireSummaryInfoVisibilityOberver.subscribe(this.wildfireGrids.toggle);
+                this.fireSummaryInfoVisibilityOberver.subscribe(this.wildfireTimeline.toggle);
+            };
+
+            this.toggleFireSummaryInfo = function(containerID){
+                this.fireSummaryInfoVisibilityOberver.notify(containerID);
             };
 
             const WildfiresTimeline = function(containerID){
@@ -873,6 +912,14 @@ require([
                     });
 
                     return fires;
+                };
+
+                this.toggle = function(targetContainerID){
+                    if(targetContainerID === containerID){
+                        conatiner.removeClass('hide');
+                    } else {
+                        conatiner.addClass('hide');
+                    }
                 };
 
                 this.populate = function(fires=[]){
@@ -930,6 +977,14 @@ require([
 
                 const conatiner = $('#'+containerID);
 
+                this.toggle = function(targetContainerID){
+                    if(targetContainerID === containerID){
+                        conatiner.removeClass('hide');
+                    } else {
+                        conatiner.addClass('hide');
+                    }
+                };
+
                 this.populate = function(fires=[]){
 
                     const gridItemsHtml = fires.map(function(d) {
@@ -957,43 +1012,43 @@ require([
                 };
             };
 
-            const WildfiresCards = function(containerID){
+            // const WildfiresCards = function(containerID){
 
-                const conatiner = $('#'+containerID);
+            //     const conatiner = $('#'+containerID);
 
-                this.populate = function(fires=[]){
+            //     this.populate = function(fires=[]){
 
-                    const cardItemsHtml = fires.map(function(d) {
-                        const pctContained = d.attributes[PCT_CONTAINED_FIELD_NAME];
-                        const fireName = d.attributes[FIRE_NAME_FIELD_NAME];
-                        const affectedArea = d.attributes[AFFECTED_AREA_FIELD_NAME];
-                        const stateCode = d.attributes[FIELD_NAME_STATE];
-                        const stateFullName = stateNamesLookup[stateCode] ? stateNamesLookup[stateCode] : stateCode;
-                        const lat = +d.attributes[FIELD_NAME_LAT].toFixed(2);
-                        const lon = +d.attributes[FIELD_NAME_LON].toFixed(2);;
-                        const startDate = d.attributes[FIELD_NAME_START_DAT_FORMATTED];
-                        const fireID = d.attributes[FIELD_NAME_INTERNAL_ID];
-                        // const legendClass = wildfireModel.getRendererBreakIndex(affectedArea);
+            //         const cardItemsHtml = fires.map(function(d) {
+            //             const pctContained = d.attributes[PCT_CONTAINED_FIELD_NAME];
+            //             const fireName = d.attributes[FIRE_NAME_FIELD_NAME];
+            //             const affectedArea = d.attributes[AFFECTED_AREA_FIELD_NAME];
+            //             const stateCode = d.attributes[FIELD_NAME_STATE];
+            //             const stateFullName = stateNamesLookup[stateCode] ? stateNamesLookup[stateCode] : stateCode;
+            //             const lat = +d.attributes[FIELD_NAME_LAT].toFixed(2);
+            //             const lon = +d.attributes[FIELD_NAME_LON].toFixed(2);;
+            //             const startDate = d.attributes[FIELD_NAME_START_DAT_FORMATTED];
+            //             const fireID = d.attributes[FIELD_NAME_INTERNAL_ID];
+            //             // const legendClass = wildfireModel.getRendererBreakIndex(affectedArea);
 
-                        const cardHtmlStr = `
-                            <div class='card customized-card trailer-half'>
-                                <div class='card-content'>
-                                    <p class='font-size-0 trailer-0 avenir-bold'>${fireName}</p>
-                                    <p class='font-size--3 leader-quarter trailer-quarter'>Started on ${startDate}, the affected area is estimated to be ${affectedArea} acres and ${pctContained}% contained. </p>
-                                    <p class='js-zoom-to-fire font-size--3 trailer-0 right cursor-pointer' data-fire-id="${fireID}"><span class='icon-ui-map-pin'></span>${stateFullName} (${lat}, ${lon})</p>
-                                </div>
-                            </div>
-                        `;
+            //             const cardHtmlStr = `
+            //                 <div class='card customized-card trailer-half'>
+            //                     <div class='card-content'>
+            //                         <p class='font-size-0 trailer-0 avenir-bold'>${fireName}</p>
+            //                         <p class='font-size--3 leader-quarter trailer-quarter'>Started on ${startDate}, the affected area is estimated to be ${affectedArea} acres and ${pctContained}% contained. </p>
+            //                         <p class='js-zoom-to-fire font-size--3 trailer-0 right cursor-pointer' data-fire-id="${fireID}"><span class='icon-ui-map-pin'></span>${stateFullName} (${lat}, ${lon})</p>
+            //                     </div>
+            //                 </div>
+            //             `;
 
-                        return cardHtmlStr;
+            //             return cardHtmlStr;
 
-                    }).join('');
+            //         }).join('');
                     
-                    conatiner.html(cardItemsHtml);
-                };
-            };
+            //         conatiner.html(cardItemsHtml);
+            //     };
+            // };
 
-            const initEventHandlers = (function(){
+            const initEventHandlers = (()=>{
                 const $body = $('body');
 
                 $body.on('click', '.js-zoom-to-fire', function(){
@@ -1012,7 +1067,15 @@ require([
 
                 $body.on('click', '.js-close-info-window', function(){
                     wildFireVizApp.hideInforWindow();
-                })
+                });
+
+                $body.on('click', '.js-toggle-fire-summary-info-container', function(){
+                    const target = $(this);
+                    const targetContainerID = target.attr('data-target-container');
+                    target.siblings().removeClass('is-active');
+                    target.addClass('is-active');
+                    appView.toggleFireSummaryInfo(targetContainerID)
+                });
 
             })();
 

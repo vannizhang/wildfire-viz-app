@@ -255,4 +255,23 @@
     background-color:rgba(103,0,67, .5);
 }
 
+.breadcrumb-nav span{
+    opacity: .7;
+    cursor: pointer;
+}
+
+.breadcrumb-nav span.is-active{
+    opacity: 1;
+    font-weight: 600;
+}
+
+.pseudo-divider::after {
+    content: '/';
+    font-weight: 400;
+    padding: 0 .2rem 0 .4rem;
+    display: inline-block;
+    opacity: 1;
+}
+
+
 

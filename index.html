@@ -74,11 +74,21 @@
                 </div>
 
                 <div class='panel panel-no-border panel-no-background'>
-                    <div id='wildfire-grid-container' class="legend-grid block-group block-group-6-up hide">
+
+                    <div class="trailer-quarter font-size--3">
+                        <nav class='breadcrumb-nav inline-block'>
+                            <span class="js-toggle-fire-summary-info-container pseudo-divider is-active" data-target-container="wildfire-grid-container">grid</span>
+                            <span class="js-toggle-fire-summary-info-container" data-target-container="wildfire-timeline-container">timeline</span>
+                        </nav>
+
+                        <span class='right'>total fires: <span class='val-holder-num-of-fires'>0</span></span>
+                    </div>
+
+                    <div id='wildfire-grid-container' class="fire-summary-info-container legend-grid block-group block-group-6-up">
                         <!-- <div class="legend-grid-item block trailer-half"><div class="legend-icon legend-class-1"></div></div> -->
                     </div>
 
-                    <div id='wildfire-card-container' class='hide'>
+                    <div id='wildfire-card-container' class='fire-summary-info-container hide'>
                         <!-- <div class='card customized-card'>
                             <div class='card-content'>
                                 <p class='font-size-0 trailer-0 avenir-bold'>Buzzard fire</p>
@@ -88,7 +98,7 @@
                         </div> -->
                     </div>
 
-                    <div id='wildfire-timeline-container' class=''>
+                    <div id='wildfire-timeline-container' class='fire-summary-info-container hide'>
                         
                         <!-- <div class='timeline-item'>
                             <div class='date-info font-size--2'>May 31</div>
@@ -128,6 +138,7 @@
                         </div> -->
 
                     </div>
+
                 </div>
             </div>
         </div>
