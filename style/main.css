@@ -9,7 +9,7 @@
 
 .side-bar {
     position: absolute;
-    width: 425px;
+    width: 450px;
     height: 100%;
     top: 0;
     right: 0;
@@ -79,31 +79,47 @@
     align-items: center;
 }
 
+.filter-wrap .fa-square-o {
+    display: initial;
+}
+
+.filter-wrap .fa-check-square-o {
+    display: none;
+}
+
+.filter-wrap.checked .fa-square-o {
+    display: none;
+}
+
+.filter-wrap.checked .fa-check-square-o {
+    display: initial;
+}
+
 .legend-icon {
     position: relative;
     display: inline-block;
-    height: 50px;
-    width: 50px;
+    height: 45px;
+    width: 45px;
     background: url("../img/FireSymbol.png") no-repeat center; 
 }
 
-.legend-icon.legend-class-1 {
+.legend-icon.legend-class-4 {
     background-size: 100%;
 }
 
-.legend-icon.legend-class-2 {
+.legend-icon.legend-class-3 {
     background-size: 80%;
 }
 
-.legend-icon.legend-class-3 {
+.legend-icon.legend-class-2 {
     background-size: 60%;
 }
 
-.legend-icon.legend-class-4 {
+.legend-icon.legend-class-1 {
     background-size: 40%;
 }
 
-.legend-icon.legend-class-5 {
+.legend-icon.legend-class-0 {
     background-size: 20%;
 }
 
@@ -154,6 +170,26 @@
 
 .search-input-btn:nth-child(1){
     border-right: solid 1px #B77600;
+}
+
+.search-input-wrap .fa-search, 
+.search-input-wrap .fa-caret-down {
+    display: initial;
+}
+
+.search-input-wrap .fa-times, 
+.search-input-wrap .fa-caret-up {
+    display: none;
+}
+
+.search-input-wrap.is-search-input-filled .fa-search,
+.search-input-wrap.is-dropdown-menu-visible .fa-caret-down {
+    display: none;
+}
+
+.search-input-wrap.is-search-input-filled .fa-times,
+.search-input-wrap.is-dropdown-menu-visible .fa-caret-up {
+    display: initial;
 }
 
 .esriPopup .contentPane {
@@ -271,6 +307,10 @@
     padding: 0 .2rem 0 .4rem;
     display: inline-block;
     opacity: 1;
+}
+
+.fire-filters-title {
+    opacity: .85;
 }
 
 

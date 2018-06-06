@@ -172,6 +172,10 @@ require([
                 }
             };
 
+            this.getAffectedAreaRendererBreaks = ()=>{
+                return this.affectedAreaRendererBreaks;
+            };
+
             this.getWhereClause = ()=>{
 
                 // list of where clauses that will be concatenated into the where string for the params,
@@ -254,7 +258,7 @@ require([
                 });
                 // console.log(this.affectedAreaRendererBreaks);
                 // console.log(val, outputIdx);
-                return 5 - outputIdx;
+                return outputIdx;
             };
 
         };
@@ -306,8 +310,10 @@ require([
             // set the operation layers for wildfire activity
             this.setOperationalLayers = function(webMapResponse){
                 const operationalLayers = this._getWebMapOperationalLayers(webMapResponse);
+                const fireLayerRendererBreaks = operationalLayers[0].layerObject.layerDrawingOptions[0].renderer.breaks
                 this.operationalLayers = operationalLayers;
-                wildfireModel.setAffectedAreaRendererBreaks(operationalLayers[0].layerObject.layerDrawingOptions[0].renderer.breaks);
+                wildfireModel.setAffectedAreaRendererBreaks(fireLayerRendererBreaks);
+                appView.setFilterLabel(fireLayerRendererBreaks);
             };
 
             this._initWebMapByID = function(webMapID){
@@ -330,7 +336,6 @@ require([
                     // console.log('fullListOfWildfires', fullListOfWildfires);
                     this.setAllWildfires(fullListOfWildfires);
                     this.zoomToExtentOfAllFires();
-                    addSearchInputOnTypeEventHandler();
                 });
             };
 
@@ -359,15 +364,6 @@ require([
                 this.wildfireClassBreakRendererInfo = classBreakRendererInfo;
             };
 
-            // this.getArrOfAllWildfires = function(fireNameOnly=false){
-            //     const arrOfAllWildfires = (!fireNameOnly)
-            //         ? this.allWildfires
-            //         : this.allWildfires.map(d=>{
-            //             return d.attributes[FIRE_NAME_FIELD_NAME];
-            //         })
-            //     return arrOfAllWildfires;
-            // };
-
             // get fires data from allWildfires
             this.getListOfFires = function(shouldOnlyReturnFireName, fieldName='', fieldVal=''){
                 let outputFires = this.allWildfires;
@@ -385,6 +381,18 @@ require([
                 }
 
                 return outputFires;
+            };
+
+            this.getMatchedFireNames = (str='')=>{
+                const fireNames = this.getListOfFires(true);
+                const textToSearch = new RegExp('^' + str + '.*$', 'i');
+                let matchedNames = [];
+                if(str.length >= 2){
+                    matchedNames = fireNames.filter(function(d, i){
+                        return d.match(textToSearch);
+                    }).splice(0, 5);
+                } 
+                return matchedNames;
             };
 
             this.getFireIdByName = function(fireName){
@@ -431,7 +439,6 @@ require([
 
                 function requestSuccessHandler(response) {
                     callback(response.features);
-                    // addSearchInputOnTypeEventHandler(response.features);
                 }
         
                 function requestErrorHandler(error) {
@@ -596,240 +603,141 @@ require([
             this.startUp();
         };
 
-        // function populateArrayChartForWildfires(wildfireData){
-        //     // console.log('calling populateArrayChartForWildfires', wildfireData);
-        //     var legendGrid = $('.legend-grid');
-        //     var legendIcons = [];
-        //     wildfireData.sort(function(a, b) {
-        //         return +b.attributes[AFFECTED_AREA_FIELD_NAME] - +a.attributes[AFFECTED_AREA_FIELD_NAME];
-        //     });
-        //     // //only show top numbers of wildfires in the list
-        //     // var wildfireDataToPopulate = wildfireData.filter(function(d, i){
-        //     //     return i < 60;
-        //     // });
-        //     wildfireData.forEach(function(d) {
-        //         var legendClass;
-        //         var area = d.attributes[AFFECTED_AREA_FIELD_NAME];
-        //         var pctContained = d.attributes[PCT_CONTAINED_FIELD_NAME];
-        //         if(area >= 110720){
-        //             legendClass = 1;
-        //         } else if(area < 110720 && area >= 40906){
-        //             legendClass = 2;
-        //         } else if(area < 40906 && area >= 11067){
-        //             legendClass = 3;
-        //         } else {
-        //             legendClass = 4;
+        // function populateSuggestionList(arrOfSuggestedFireNames, inputTextValue){
+        //     var suggestionListContainer = $('.suggestion-list-container');
+        //     suggestionListContainer.empty();
+        //     if(arrOfSuggestedFireNames.length){
+        //         arrOfSuggestedFireNames = arrOfSuggestedFireNames.map(function(d){
+        //             return "<div class='suggestion-item'><span class='font-size--2'>" + d + "</span></div>"
+        //         });
+        //         suggestionListContainer.append(arrOfSuggestedFireNames.join(''));
+        //         // suggestionListContainer.removeClass('hide');
+        //         toggleSuggestionList(true);
+        //         addClickEventHandlerToSuggestionListItems(suggestionListContainer);
+        //     } else {
+        //         suggestionListContainer.addClass('hide');
+        //         if(!inputTextValue){
+        //             wildFireVizApp.searchWildfire();
         //         }
-        //         var legendIconStr = `
-        //             <div class="legend-grid-item block trailer-half">
-        //                 <div class="legend-icon legend-class-${legendClass}">
-        //                     <div class='bottom-pct-indicator'>
-        //                         <div class='highlight-bar' style="width: ${pctContained}%;"></div>
-        //                     </div>
-        //                 </div>
-        //             </div>
-        //         `;
-        //         legendIcons.push(legendIconStr);
-        //     });
-
-        //     var legendGridItems = $(legendIcons.join(''));
-        //     legendGrid.empty();
-        //     legendGrid.append(legendGridItems);
-        //     // console.log(wildfireDataToPopulate);
-
-        //     legendGridItems.on('mouseover', function(evt){
-        //         var itemIdx = $(this).index();
-        //         var selectedFeature = wildfireData[itemIdx];
-        //         var selectedFeatureGeom = new Point( {"x": selectedFeature.attributes.LONGITUDE, "y": selectedFeature.attributes.LATITUDE, "spatialReference": {"wkid": 4326 } });
-        //         var contentHtmlStr = `
-        //             <div class='customized-popup-header'>
-        //                 <span class='font-size--3'>Start Date: ${moment(selectedFeature.attributes.START_DATE).format("MMMM Do, YYYY")}</span>
-        //                 <span class='icon-ui-close avenir-bold font-size--3 right'></span>
-        //             </div>
-        //             <div class='leader-quarter trailer-quarter'>
-        //                 <span>
-        //                     The ${selectedFeature.attributes[FIRE_NAME_FIELD_NAME]} fire is estimated to be ${selectedFeature.attributes.AREA_} acres
-        //                     and <strong>${selectedFeature.attributes.PER_CONT}%</strong> contained.
-        //                 </span><br>
-        //             <div>
-        //         `;
-        //         wildFireVizApp.map.infoWindow.setContent(contentHtmlStr);
-        //         wildFireVizApp.map.infoWindow.show(selectedFeatureGeom);
-        //     });
-
-        //     legendGridItems.on('mouseout', function(evt){
-        //         wildFireVizApp.map.infoWindow.hide();
-        //     });
-
-        //     addClickHandlerToLegendGridItems(wildfireData);
+        //     }
         // }
 
-        // function addClickHandlerToLegendGridItems(wildfireData){
-        //     $('.legend-grid-item').on('click', function(evt){
-        //         var itemIdx = $(this).index();
-        //         var selectedFeature = wildfireData[itemIdx];
-        //         var selectedFeatureGeom = new Point( {"x": selectedFeature.attributes.LONGITUDE, "y": selectedFeature.attributes.LATITUDE, "spatialReference": {"wkid": 4326 } });
-        //         wildFireVizApp.map.centerAndZoom(selectedFeatureGeom, 10);
+        // function addClickEventHandlerToSuggestionListItems(suggestionListContainer){
+        //     suggestionListContainer.find('.suggestion-item').on('click', function(evt){
+        //         var itemText = $(this).text();
+        //         $('.fire-name-search-input').val(itemText);
+        //         // wildFireVizApp.setSelectedFireName(itemText);
+        //         wildfireModel.setName(itemText);
+
+        //         toggleSearchBtnIcon(itemText);
+        //         toggleSuggestionList(false);
+        //         // suggestionListContainer.addClass('hide');
+        //         wildFireVizApp.searchWildfire();
         //     });
         // }
 
-        function populateSuggestionList(arrOfSuggestedFireNames, inputTextValue){
-            var suggestionListContainer = $('.suggestion-list-container');
-            suggestionListContainer.empty();
-            if(arrOfSuggestedFireNames.length){
-                arrOfSuggestedFireNames = arrOfSuggestedFireNames.map(function(d){
-                    return "<div class='suggestion-item'><span class='font-size--2'>" + d + "</span></div>"
-                });
-                suggestionListContainer.append(arrOfSuggestedFireNames.join(''));
-                // suggestionListContainer.removeClass('hide');
-                toggleSuggestionList(true);
-                addClickEventHandlerToSuggestionListItems(suggestionListContainer);
-            } else {
-                suggestionListContainer.addClass('hide');
-                if(!inputTextValue){
-                    wildFireVizApp.searchWildfire();
-                }
-            }
-        }
+        // function addSearchInputOnTypeEventHandler(){
+        //     $('.fire-name-search-input').unbind('keyup').on( "keyup", fireNameSearchInputOnKeyupHandler); 
+        //     // console.log(arrOfWildfireNames);
+        // }
 
-        function addClickEventHandlerToSuggestionListItems(suggestionListContainer){
-            suggestionListContainer.find('.suggestion-item').on('click', function(evt){
-                var itemText = $(this).text();
-                $('.fire-name-search-input').val(itemText);
-                // wildFireVizApp.setSelectedFireName(itemText);
-                wildfireModel.setName(itemText);
+        // function fireNameSearchInputOnKeyupHandler(evt){
+        //     // let arrOfWildfireNames = wildFireVizApp.getArrOfAllWildfires(true);
+        //     let arrOfWildfireNames = wildFireVizApp.getListOfFires(true);
+        //     let currentText = $(this).val();
+        //     let textToSearch = new RegExp('^' + currentText + '.*$', 'i');
+        //     let matchedNames = [];
+        //     if(currentText.length >= 2){
+        //         matchedNames = arrOfWildfireNames.filter(function(d, i){
+        //             return d.match(textToSearch);
+        //         }).splice(0, 5);
+        //     } 
+        //     // wildFireVizApp.setSelectedFireName(currentText);
+        //     wildfireModel.setName(currentText);
 
-                toggleSearchBtnIcon(itemText);
-                toggleSuggestionList(false);
-                // suggestionListContainer.addClass('hide');
-                wildFireVizApp.searchWildfire();
-            });
-        }
+        //     toggleSearchBtnIcon(currentText);
+        //     populateSuggestionList(matchedNames, currentText);
+        // }
 
-        function addSearchInputOnTypeEventHandler(){
-            $('.fire-name-search-input').unbind('keyup').on( "keyup", fireNameSearchInputOnKeyupHandler); 
-            // console.log(arrOfWildfireNames);
-        }
+        // function searchBtnOnClickHandler(evt){
+        //     let searchBtn = $(this);
+        //     let searchBtnIcon = searchBtn.find('.fa');
+        //     let isClickToClickSearchText = searchBtnIcon.hasClass('fa-times');
 
-        function fireNameSearchInputOnKeyupHandler(evt){
-            // let arrOfWildfireNames = wildFireVizApp.getArrOfAllWildfires(true);
-            let arrOfWildfireNames = wildFireVizApp.getListOfFires(true);
-            let currentText = $(this).val();
-            let textToSearch = new RegExp('^' + currentText + '.*$', 'i');
-            let matchedNames = [];
-            if(currentText.length >= 2){
-                matchedNames = arrOfWildfireNames.filter(function(d, i){
-                    return d.match(textToSearch);
-                }).splice(0, 5);
-            } 
-            // wildFireVizApp.setSelectedFireName(currentText);
-            wildfireModel.setName(currentText);
+        //     if(isClickToClickSearchText){
+        //         $('.fire-name-search-input').val('');
+        //         // wildFireVizApp.setSelectedFireName(null);
+        //         wildfireModel.setName(null);
 
-            toggleSearchBtnIcon(currentText);
-            populateSuggestionList(matchedNames, currentText);
-        }
+        //         toggleSearchBtnIcon(null);
+        //         wildFireVizApp.searchWildfire();
+        //     } 
+        // }
 
-        function affectedAreaFilterOnClickHandler(evt){
-            const targetFilter = $(this);
-            targetFilter.toggleClass('checked ');
+        // function toggleSuggestionListBtnOnClickHandler(){
+        //     let isSuggestionListInvisible = $('.suggestion-list-container').hasClass('hide');
 
-            const targetFilterIndex = +targetFilter.attr('data-filter-index');
-            const isTargetFilterChecked = targetFilter.hasClass('checked');
+        //     if(isSuggestionListInvisible){
+        //         // let arrOfWildfireNames = wildFireVizApp.getArrOfAllWildfires(true);
+        //         let arrOfWildfireNames = wildFireVizApp.getListOfFires(true);
+        //         populateSuggestionList(arrOfWildfireNames);
+        //     } else {
+        //         toggleSuggestionList(false);
+        //     }
+        // }
 
-            const targetCBox = targetFilter.find('.fa');
-            if(isTargetFilterChecked){
-                targetCBox.addClass('fa-check-square-o');
-                targetCBox.removeClass('fa-square-o');
-            } else {
-                targetCBox.removeClass('fa-check-square-o');
-                targetCBox.addClass('fa-square-o');
-            }
+        // function updateToggleSuggestionListBtnIcon(){
+        //     let isSuggestionListInvisible = $('.suggestion-list-container').hasClass('hide');
+        //     let targetBtn = $('.toggle-suggestion-list-btn');
+        //     let toggleSuggestionListBtnIcon = targetBtn.find('.fa');
+        //     if(isSuggestionListInvisible){
+        //         toggleSuggestionListBtnIcon.addClass('fa-caret-down');
+        //         toggleSuggestionListBtnIcon.removeClass('fa-caret-up');
+        //     } else {
+        //         toggleSuggestionListBtnIcon.addClass('fa-caret-up');
+        //         toggleSuggestionListBtnIcon.removeClass('fa-caret-down');
+        //     }
+        // }
 
-            wildfireModel.setAffectedAreaRendererVisibilityByIndex(targetFilterIndex, isTargetFilterChecked);
-            wildFireVizApp.searchWildfire();
-        }
+        // function toggleSuggestionList(isVisible){
+        //     var suggestionListContainer = $('.suggestion-list-container');
+        //     if(isVisible){
+        //         suggestionListContainer.removeClass('hide');
+        //     } else {
+        //         suggestionListContainer.addClass('hide');
+        //     }   
+        //     updateToggleSuggestionListBtnIcon();
+        // }
 
-        function searchBtnOnClickHandler(evt){
-            let searchBtn = $(this);
-            let searchBtnIcon = searchBtn.find('.fa');
-            let isClickToClickSearchText = searchBtnIcon.hasClass('fa-times');
+        // function toggleSearchBtnIcon(selectedFireName){
+        //     // let selectedFireName = wildFireVizApp.getSelectedFireName();
+        //     let searchBtn = $('.search-by-name-btn');
+        //     let searchBtnIcon = searchBtn.find('.fa');
+        //     if(selectedFireName){
+        //         searchBtnIcon.addClass('fa-times');
+        //         searchBtnIcon.removeClass('fa-search');
+        //     } else {
+        //         searchBtnIcon.removeClass('fa-times');
+        //         searchBtnIcon.addClass('fa-search'); 
+        //         toggleSuggestionList(false);
+        //     }
+        // }
 
-            if(isClickToClickSearchText){
-                $('.fire-name-search-input').val('');
-                // wildFireVizApp.setSelectedFireName(null);
-                wildfireModel.setName(null);
-
-                toggleSearchBtnIcon(null);
-                wildFireVizApp.searchWildfire();
-            } 
-        }
-
-        function toggleSuggestionListBtnOnClickHandler(){
-            let isSuggestionListInvisible = $('.suggestion-list-container').hasClass('hide');
-
-            if(isSuggestionListInvisible){
-                // let arrOfWildfireNames = wildFireVizApp.getArrOfAllWildfires(true);
-                let arrOfWildfireNames = wildFireVizApp.getListOfFires(true);
-                populateSuggestionList(arrOfWildfireNames);
-            } else {
-                toggleSuggestionList(false);
-            }
-        }
-
-        function updateToggleSuggestionListBtnIcon(){
-            let isSuggestionListInvisible = $('.suggestion-list-container').hasClass('hide');
-            let targetBtn = $('.toggle-suggestion-list-btn');
-            let toggleSuggestionListBtnIcon = targetBtn.find('.fa');
-            if(isSuggestionListInvisible){
-                toggleSuggestionListBtnIcon.addClass('fa-caret-down');
-                toggleSuggestionListBtnIcon.removeClass('fa-caret-up');
-            } else {
-                toggleSuggestionListBtnIcon.addClass('fa-caret-up');
-                toggleSuggestionListBtnIcon.removeClass('fa-caret-down');
-            }
-        }
-
-        function toggleSuggestionList(isVisible){
-            var suggestionListContainer = $('.suggestion-list-container');
-            if(isVisible){
-                suggestionListContainer.removeClass('hide');
-            } else {
-                suggestionListContainer.addClass('hide');
-            }   
-            updateToggleSuggestionListBtnIcon();
-        }
-
-        function toggleSearchBtnIcon(selectedFireName){
-            // let selectedFireName = wildFireVizApp.getSelectedFireName();
-            let searchBtn = $('.search-by-name-btn');
-            let searchBtnIcon = searchBtn.find('.fa');
-            if(selectedFireName){
-                searchBtnIcon.addClass('fa-times');
-                searchBtnIcon.removeClass('fa-search');
-            } else {
-                searchBtnIcon.removeClass('fa-times');
-                searchBtnIcon.addClass('fa-search'); 
-                toggleSuggestionList(false);
-            }
-        }
-
-        //attach app event handlers
-        $('.js-affected-area-filter').on('click', affectedAreaFilterOnClickHandler);
-
-        $('.search-by-name-btn').on('click', searchBtnOnClickHandler);
-
-        $('.toggle-suggestion-list-btn').on('click', toggleSuggestionListBtnOnClickHandler);
+        // $('.search-by-name-btn').on('click', searchBtnOnClickHandler);
+        // $('.toggle-suggestion-list-btn').on('click', toggleSuggestionListBtnOnClickHandler);
 
 
         const AppView = function(){
 
             // cache dom elements
             const $numOfFires = $('.val-holder-num-of-fires');
+            const $fireNameSearchInput = $('.fire-name-search-input');
 
-            // fire summary info objects
+            // app view components
             this.wildfireGrids = null;
             this.wildfireTimeline = null;
             // this.wildfireCards = null;
+            this.fireNameDropdownMenu = null;
 
             // state observers
             this.fireDataOberver = null;
@@ -839,6 +747,7 @@ require([
                 this.wildfireGrids = new WildfiresGrid(WILDFIRE_GRID_CONTAINER_ID);
                 // this.wildfireCards = new WildfiresCards(WILDFIRE_CARD_CONTAINER_ID);
                 this.wildfireTimeline = new WildfiresTimeline(WILDFIRE_TIMELINE_CONTAINER_ID);
+                this.fireNameDropdownMenu = new AutoCompleteDropdownMenu('fire-name-dropdown-menu');
 
                 this.initFireDataObserser();
                 this.initFireSummaryInfoVisibilityOberver();
@@ -849,15 +758,15 @@ require([
                 this.fireDataOberver.subscribe(this.wildfireGrids.populate);
                 // this.wildfireDataOberver.subscribe(this.wildfireCards.populate);
                 this.fireDataOberver.subscribe(this.wildfireTimeline.populate);
+                this.fireDataOberver.subscribe(this.updateNumOfFiresVal);
             };
 
             this.populateWildfires = function(fires=[]){
                 this.fireDataOberver.notify(fires);
-                this.updateNumOfFiresVal(fires.length);
             };
 
-            this.updateNumOfFiresVal = function(count=0){
-                $numOfFires.text(count);
+            this.updateNumOfFiresVal = function(fires=[]){
+                $numOfFires.text(fires.length);
             }
 
             this.initFireSummaryInfoVisibilityOberver = function(){
@@ -868,6 +777,15 @@ require([
 
             this.toggleFireSummaryInfo = function(containerID){
                 this.fireSummaryInfoVisibilityOberver.notify(containerID);
+            };
+
+            this.setFilterLabel = (breakInfos=[])=>{
+                // console.log(breakInfos);
+                breakInfos.forEach((d,idx)=>{
+                    const labelText = abbreviate_number(+d[1]);
+                    const filterLabel = $('.filter-wrap[data-filter-index="' + idx + '"]').find('.filter-label');
+                    filterLabel.text(labelText);
+                });
             };
 
             const WildfiresTimeline = function(containerID){
@@ -1012,6 +930,74 @@ require([
                 };
             };
 
+            const AutoCompleteDropdownMenu = function(containerID){
+
+                const conatiner = $('#'+containerID);
+                const parentContainer = conatiner.parent();
+
+                this.populate = (fires)=>{
+                    fires = fires || wildFireVizApp.getListOfFires(true);
+                    const dorpdownMenuItemsHtmlStr = fires.map(fire=>{
+                        return `<div class='suggestion-item js-set-suggested-item' data-fire-name="${fire}"><span class='font-size--2'>${fire}</span></div>`;
+                    }).join('');
+                    conatiner.html(dorpdownMenuItemsHtmlStr);
+                };
+
+                this.getCountOfDropdownMenuItems = ()=>{
+                    return conatiner.children().length;
+                }
+
+                this.show = ()=>{
+                    conatiner.removeClass('hide');
+                    this.toggleIsDropdownVisible(true);
+                };
+
+                this.hide = ()=>{
+                    conatiner.addClass('hide');
+                    this.toggleIsDropdownVisible(false);
+                };
+
+                this.toggleDropdownMenu = ()=>{
+                    conatiner.toggleClass('hide');
+
+                    const isVisible = !conatiner.hasClass('hide');
+                    const isDropdownMenuPopulated = this.getCountOfDropdownMenuItems() ? true : false;
+
+                    if(isVisible && !isDropdownMenuPopulated){
+                        this.populate();
+                    }
+
+                    this.toggleIsDropdownVisible(isVisible);
+                };
+
+                this.setSelectedItem = (fireName='')=>{
+                    parentContainer.find('.fire-name-search-input').val(fireName);
+                    const isFilled = fireName ? true : false;
+                    this.toggleIsSearchInputFilled(isFilled);
+                    this.hide();
+
+                    wildfireModel.setName(fireName);
+                    wildFireVizApp.searchWildfire();
+                };
+
+                this.toggleIsDropdownVisible = (isVisiblefalse)=>{
+                    if(isVisiblefalse){
+                        parentContainer.addClass('is-dropdown-menu-visible');
+                    } else {
+                        parentContainer.removeClass('is-dropdown-menu-visible');
+                    }
+                };
+
+                this.toggleIsSearchInputFilled = (isFilled=false)=>{
+                    if(isFilled){
+                        parentContainer.addClass('is-search-input-filled');
+                    } else {
+                        parentContainer.removeClass('is-search-input-filled');
+                    }
+                };
+
+            };
+
             // const WildfiresCards = function(containerID){
 
             //     const conatiner = $('#'+containerID);
@@ -1069,12 +1055,56 @@ require([
                     wildFireVizApp.hideInforWindow();
                 });
 
+                $body.on('click', '.js-affected-area-filter', function(){
+                    const targetFilter = $(this);
+                    targetFilter.toggleClass('checked');
+        
+                    const targetFilterIndex = +targetFilter.attr('data-filter-index');
+                    const isVisible = targetFilter.hasClass('checked');
+        
+                    wildfireModel.setAffectedAreaRendererVisibilityByIndex(targetFilterIndex, isVisible);
+                    wildFireVizApp.searchWildfire();
+                });
+
                 $body.on('click', '.js-toggle-fire-summary-info-container', function(){
                     const target = $(this);
                     const targetContainerID = target.attr('data-target-container');
                     target.siblings().removeClass('is-active');
                     target.addClass('is-active');
                     appView.toggleFireSummaryInfo(targetContainerID)
+                });
+
+                $body.on('click', '.toggle-suggestion-list-btn', function(){
+                    appView.fireNameDropdownMenu.toggleDropdownMenu();
+                });
+
+                $body.on('click', '.js-set-suggested-item', function(){
+                    const targetFireName = $(this).attr('data-fire-name');
+                    appView.fireNameDropdownMenu.setSelectedItem(targetFireName);
+                });
+
+                $body.on('click', '.js-clear-suggested-item', function(){
+                    appView.fireNameDropdownMenu.setSelectedItem(null);
+                    appView.fireNameDropdownMenu.populate();
+                });
+
+                $fireNameSearchInput.on('keyup', function(){
+                    const currentText = $(this).val();
+                    const matchedNames = wildFireVizApp.getMatchedFireNames(currentText);
+
+                    appView.fireNameDropdownMenu.populate(matchedNames);
+
+                    if(currentText){
+                        appView.fireNameDropdownMenu.toggleIsSearchInputFilled(true);
+                    } else {
+                        appView.fireNameDropdownMenu.toggleIsSearchInputFilled(false);
+                    }
+
+                    if(matchedNames.length){
+                        appView.fireNameDropdownMenu.show();
+                    } else {
+                        appView.fireNameDropdownMenu.hide();
+                    }
                 });
 
             })();
@@ -1112,6 +1142,20 @@ require([
         const wildfireModel = new WildFireDataModel();
         const wildFireVizApp = new WildFireVizApp();
         const appView = new AppView();
+
+        // util functions
+        const abbreviate_number = function(num, fixed) {
+            if (num === null) { return null; } // terminate early
+            if (num === 0) { return '0'; } // terminate early
+            fixed = (!fixed || fixed < 0) ? 0 : fixed; // number of decimal places to show
+            fixed = (num > 10000) ? 0 : 1
+            var b = (num).toPrecision(2).split("e"), // get power
+                k = b.length === 1 ? 0 : Math.floor(Math.min(b[1].slice(1), 14) / 3), // floor at decimals, ceiling at trillions
+                c = k < 1 ? num.toFixed(0 + fixed) : (num / Math.pow(10, k * 3) ).toFixed(fixed), // divide by power
+                d = c < 0 ? c : Math.abs(c), // enforce -0 is 0
+                e = d + ['', 'K', 'M', 'B', 'T'][k]; // append power
+            return e;
+        }
 
     });
 

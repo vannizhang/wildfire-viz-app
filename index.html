@@ -38,38 +38,58 @@
                         <div class='search-input-btns-wrap text-center'>
                             <div class='search-input-btn search-by-name-btn inline-block'>
                                 <span class='fa fa-search btn-icon'></span>
+                                <span class='fa fa-times js-clear-suggested-item btn-icon'></span>
                             </div>
                             <div class='search-input-btn toggle-suggestion-list-btn inline-block right' data-is-suggestion-list-visible='false'>
                                 <span class='fa fa-caret-down'></span>
+                                <span class='fa fa-caret-up'></span>
                             </div>
                         </div>
                         
-                        <div class='panel panel-no-border panel-no-padding suggestion-list-container hide'></div>
+                        <div id='fire-name-dropdown-menu' class='panel panel-no-border panel-no-padding suggestion-list-container hide'></div>
+                    </div>
+
+                    <div class='fire-filters-wrap'>
+
+                        <div class='font-size--3 leader-half trailer-0 text-right'>
+                            <span class='fire-filters-title'>Active wildfires by affected area (in acres)</span>
+                        </div>
+                    
+                        <div class="block-group block-group-5-up leader-half">
+                            <div class="block filter-wrap js-affected-area-filter checked text-center font-size--3" data-filter-index='4'>
+                                <span class="legend-icon legend-class-4"></span>
+                                <span class="filter-label"></span>
+                                <span class="fa fa-check-square-o fa-lg" aria-hidden="true"></span>
+                                <span class="fa fa-square-o fa-lg" aria-hidden="true"></span>
+                            </div>
+                            <div class="block filter-wrap js-affected-area-filter checked text-center font-size--3" data-filter-index='3'>
+                                <span class="legend-icon legend-class-3"></span>
+                                <span class="filter-label"></span>
+                                <span class="fa fa-check-square-o fa-lg" aria-hidden="true"></span>
+                                <span class="fa fa-square-o fa-lg" aria-hidden="true"></span>
+                            </div>
+                            <div class="block filter-wrap js-affected-area-filter checked text-center font-size--3" data-filter-index='2'>
+                                <span class="legend-icon legend-class-2"></span>
+                                <span class="filter-label"></span>
+                                <span class="fa fa-check-square-o fa-lg" aria-hidden="true"></span>
+                                <span class="fa fa-square-o fa-lg" aria-hidden="true"></span>
+                            </div>
+                            <div class="block filter-wrap js-affected-area-filter checked text-center font-size--3" data-filter-index='1'>
+                                <span class="legend-icon legend-class-1"></span>
+                                <span class="filter-label"></span>
+                                <span class="fa fa-check-square-o fa-lg" aria-hidden="true"></span>
+                                <span class="fa fa-square-o fa-lg" aria-hidden="true"></span>
+                            </div>
+                            <div class="block filter-wrap js-affected-area-filter checked text-center font-size--3" data-filter-index='0'>
+                                <span class="legend-icon legend-class-0"></span>
+                                <span class="filter-label"></span>
+                                <span class="fa fa-check-square-o fa-lg" aria-hidden="true"></span>
+                                <span class="fa fa-square-o fa-lg" aria-hidden="true"></span>
+                            </div>
+                        </div>
+
                     </div>
                     
-
-                    <div class="block-group block-group-5-up leader-half">
-                        <div class="block js-affected-area-filter checked text-center" data-filter-index='4'>
-                            <span class="legend-icon legend-class-1"></span>
-                            <span class="font-size--3"><i class="fa fa-check-square-o fa-lg" aria-hidden="true"></i></span>
-                        </div>
-                        <div class="block js-affected-area-filter checked text-center" data-filter-index='3'>
-                            <span class="legend-icon legend-class-2"></span>
-                            <span class="font-size--3"><i class="fa fa-check-square-o fa-lg" aria-hidden="true"></i></span>
-                        </div>
-                        <div class="block js-affected-area-filter checked text-center" data-filter-index='2'>
-                            <span class="legend-icon legend-class-3"></span>
-                            <span class="font-size--3"><i class="fa fa-check-square-o fa-lg" aria-hidden="true"></i></span>
-                        </div>
-                        <div class="block js-affected-area-filter checked text-center" data-filter-index='1'>
-                            <span class="legend-icon legend-class-4"></span>
-                            <span class="font-size--3"><i class="fa fa-check-square-o fa-lg" aria-hidden="true"></i></span>
-                        </div>
-                        <div class="block js-affected-area-filter checked text-center" data-filter-index='0'>
-                            <span class="legend-icon legend-class-5"></span>
-                            <span class="font-size--3"><i class="fa fa-check-square-o fa-lg" aria-hidden="true"></i></span>
-                        </div>
-                    </div>
                     <div class='hDivider leader-half'></div>
                 </div>
 
