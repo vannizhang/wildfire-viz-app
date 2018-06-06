@@ -7,6 +7,7 @@ require([
     "esri/geometry/Point",
     "esri/geometry/Multipoint",
     "esri/SpatialReference",
+    "esri/geometry/screenUtils",
 
     "esri/tasks/IdentifyTask",
     "esri/tasks/IdentifyParameters",
@@ -26,6 +27,7 @@ require([
     Point,
     Multipoint,
     SpatialReference,
+    screenUtils,
 
     IdentifyTask, IdentifyParameters,
 
@@ -400,9 +402,15 @@ require([
                 return fireData ? fireData.attributes[FIELD_NAME_INTERNAL_ID]: '';
             };
 
+            this.convertGeomToScreenPoint = (geom)=>{
+                const screenPos = screenUtils.toScreenPoint(this.map.extent, this.map.width, this.map.height, geom);
+                return screenPos;
+            };
+
             this.showInfoWindow = function(fireID=''){
                 const fireData = this.getFireDataByID(fireID);
                 const fireGeom = this.getFeatureGeometryInWgs84(fireData);
+                const fireGeomInScreenPoint = this.convertGeomToScreenPoint(fireGeom);
                 const contentHtmlStr = `
                     <div class='customized-popup-header'>
                         <span class='font-size--3'>Start Date: ${fireData.attributes[FIELD_NAME_START_DAT_FORMATTED]}</span>
@@ -417,10 +425,12 @@ require([
                 `;
                 this.map.infoWindow.setContent(contentHtmlStr);
                 this.map.infoWindow.show(fireGeom);
+                appView.setSquareReferenceBoxPosition(fireGeomInScreenPoint);
             };
 
             this.hideInforWindow = function(){
                 this.map.infoWindow.hide();
+                appView.setSquareReferenceBoxPosition(null);
             };
 
             this.zoomToFire = function(fireID=''){
@@ -551,10 +561,12 @@ require([
             this.setMapEeventHandlers = function(map){
 
                 map.on("click", (evt)=>{
+                    this.hideInforWindow();
                     this.execIdentifyTask(evt.mapPoint);
                 });
 
                 map.on('extent-change', (evt)=>{
+                    this.hideInforWindow();
                     wildfireModel.setExtent(evt.extent);
                     this.searchWildfire();
                 }); 
@@ -732,6 +744,7 @@ require([
             // cache dom elements
             const $numOfFires = $('.val-holder-num-of-fires');
             const $fireNameSearchInput = $('.fire-name-search-input');
+            const $squareReferenceBox = $('.square-reference-box');
 
             // app view components
             this.wildfireGrids = null;
@@ -786,6 +799,20 @@ require([
                     const filterLabel = $('.filter-wrap[data-filter-index="' + idx + '"]').find('.filter-label');
                     filterLabel.text(labelText);
                 });
+            };
+
+            this.setSquareReferenceBoxPosition = (screenPos)=>{
+
+                if(!screenPos){
+                    $squareReferenceBox.addClass('hide');
+                } else {
+                    const posOffset = $squareReferenceBox.width() / 2;
+                    $squareReferenceBox.css('top', screenPos.y - posOffset);
+                    $squareReferenceBox.css('left', screenPos.x - posOffset);
+                    $squareReferenceBox.removeClass('hide');
+                    // console.log(screenPos);
+                }
+
             };
 
             const WildfiresTimeline = function(containerID){
