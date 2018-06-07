@@ -1102,3 +1102,5 @@ require([
     });
 
 });
+
+console.log('Love the app? The source code is available on GitHub:', 'https://github.com/vannizhang/wildfire-viz-app');
