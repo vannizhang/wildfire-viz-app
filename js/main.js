@@ -7,13 +7,18 @@ require([
     "esri/geometry/Point",
     "esri/geometry/Multipoint",
     "esri/SpatialReference",
+    "esri/geometry/screenUtils",
 
     "esri/tasks/IdentifyTask",
     "esri/tasks/IdentifyParameters",
 
     "esri/layers/LayerDrawingOptions",
+    "esri/renderers/SimpleRenderer",
     "esri/renderers/ClassBreaksRenderer",
     "esri/symbols/PictureMarkerSymbol",
+    "esri/symbols/SimpleFillSymbol",
+    "esri/symbols/SimpleLineSymbol",
+    "esri/Color",
     "dojo/domReady!"
 ], function(
     arcgisUtils, 
@@ -24,12 +29,18 @@ require([
     Point,
     Multipoint,
     SpatialReference,
+    screenUtils,
 
     IdentifyTask, IdentifyParameters,
 
     LayerDrawingOptions,
+    SimpleRenderer,
     ClassBreaksRenderer,
-    PictureMarkerSymbol
+    PictureMarkerSymbol,
+    SimpleFillSymbol,
+    SimpleLineSymbol,
+    Color
+    // SimpleLineSymbol
 ){
     $(document).ready(function () {
         // Enforce strict mode
@@ -41,6 +52,10 @@ require([
         const WILDFIRE_ACTIVITY_BASE_URL = "https://utility.arcgis.com/usrsvcs/servers/141efcbd82fd4c129f5b784c2bc85229/rest/services/LiveFeeds/Wildfire_Activity/MapServer";
         const REQUEST_URL_WILDFIRE_ACTIVITY = WILDFIRE_ACTIVITY_BASE_URL + "/0/query";
         const REQUEST_URL_WILDFIRE_GENERATE_RENDERER = WILDFIRE_ACTIVITY_BASE_URL + "/dynamicLayer/generateRenderer";
+
+        const LAYER_NAME_ACTIVE_FIRE = 'Active_Fire_Report';
+        const LAYER_INDEX_ACTIVE_FIRE_PERIMETER = 2;
+
         // const OAUTH_APP_ID = "5LTx4lRbinywSMvI";
         const AFFECTED_AREA_FIELD_NAME = 'AREA_';
         const PCT_CONTAINED_FIELD_NAME = 'PER_CONT';
@@ -55,6 +70,7 @@ require([
         // dom elements data
         const WILDFIRE_GRID_CONTAINER_ID = 'wildfire-grid-container';
         const WILDFIRE_CARD_CONTAINER_ID = 'wildfire-card-container';
+        const WILDFIRE_TIMELINE_CONTAINER_ID = 'wildfire-timeline-container';
         
         // look up tables
         const wildfireLayerSymbolsLookup = {
@@ -167,6 +183,10 @@ require([
                 }
             };
 
+            this.getAffectedAreaRendererBreaks = ()=>{
+                return this.affectedAreaRendererBreaks;
+            };
+
             this.getWhereClause = ()=>{
 
                 // list of where clauses that will be concatenated into the where string for the params,
@@ -247,9 +267,7 @@ require([
                         outputIdx = idx;
                     }
                 });
-                // console.log(this.affectedAreaRendererBreaks);
-                // console.log(val, outputIdx);
-                return 5 - outputIdx;
+                return outputIdx;
             };
 
         };
@@ -301,8 +319,10 @@ require([
             // set the operation layers for wildfire activity
             this.setOperationalLayers = function(webMapResponse){
                 const operationalLayers = this._getWebMapOperationalLayers(webMapResponse);
+                const fireLayerRendererBreaks = operationalLayers[0].layerObject.layerDrawingOptions[0].renderer.breaks
                 this.operationalLayers = operationalLayers;
-                wildfireModel.setAffectedAreaRendererBreaks(operationalLayers[0].layerObject.layerDrawingOptions[0].renderer.breaks);
+                wildfireModel.setAffectedAreaRendererBreaks(fireLayerRendererBreaks);
+                appView.setFilterLabel(fireLayerRendererBreaks);
             };
 
             this._initWebMapByID = function(webMapID){
@@ -325,20 +345,21 @@ require([
                     // console.log('fullListOfWildfires', fullListOfWildfires);
                     this.setAllWildfires(fullListOfWildfires);
                     this.zoomToExtentOfAllFires();
-                    addSearchInputOnTypeEventHandler();
                 });
             };
 
             this.searchWildfire = function(options={}, onSuccessHandler){
-                // onSuccessHandler = onSuccessHandler || populateArrayChartForWildfires;
+                const queryParams = wildfireModel.getQueryParams(); // this._getQueryParams(whereClause, extentJSON);
+
                 const defaultOnSuccessHandler = (res)=>{
                     const sortedFires = this.sortFiresByFieldName(res, AFFECTED_AREA_FIELD_NAME);
                     appView.populateWildfires(sortedFires);
+                    // this.updateFirePerimeterLayer(sortedFires);
+                    this._setLayerDefinitionsForWildfireLayer(queryParams.where, sortedFires);
                 }
-                const queryParams = wildfireModel.getQueryParams(); // this._getQueryParams(whereClause, extentJSON);
+                
                 onSuccessHandler = onSuccessHandler || defaultOnSuccessHandler;
 
-                this._setLayerDefinitionsForWildfireLayer(queryParams.where);
                 this._queryWildfireData(queryParams, onSuccessHandler);
             };
 
@@ -353,15 +374,6 @@ require([
             this.setWildfireClassBreakRendererInfo = function(classBreakRendererInfo){
                 this.wildfireClassBreakRendererInfo = classBreakRendererInfo;
             };
-
-            // this.getArrOfAllWildfires = function(fireNameOnly=false){
-            //     const arrOfAllWildfires = (!fireNameOnly)
-            //         ? this.allWildfires
-            //         : this.allWildfires.map(d=>{
-            //             return d.attributes[FIRE_NAME_FIELD_NAME];
-            //         })
-            //     return arrOfAllWildfires;
-            // };
 
             // get fires data from allWildfires
             this.getListOfFires = function(shouldOnlyReturnFireName, fieldName='', fieldVal=''){
@@ -382,27 +394,53 @@ require([
                 return outputFires;
             };
 
+            this.getMatchedFireNames = (str='')=>{
+                const fireNames = this.getListOfFires(true);
+                const textToSearch = new RegExp('^' + str + '.*$', 'i');
+                let matchedNames = [];
+                if(str.length >= 2){
+                    matchedNames = fireNames.filter(function(d, i){
+                        return d.match(textToSearch);
+                    }).splice(0, 5);
+                } 
+                return matchedNames;
+            };
+
+            this.getFireIdByName = function(fireName){
+                const fireData = this.getListOfFires(false, FIRE_NAME_FIELD_NAME, fireName)[0];
+                return fireData ? fireData.attributes[FIELD_NAME_INTERNAL_ID]: '';
+            };
+
             this.showInfoWindow = function(fireID=''){
                 const fireData = this.getFireDataByID(fireID);
                 const fireGeom = this.getFeatureGeometryInWgs84(fireData);
+                const fireGeomInScreenPoint = this.convertGeomToScreenPoint(fireGeom);
+                const stateCode = fireData.attributes[FIELD_NAME_STATE];
+                const stateFullName = stateNamesLookup[stateCode] ? stateNamesLookup[stateCode] : stateCode;
+                const lat = +fireData.attributes[FIELD_NAME_LAT].toFixed(2);
+                const lon = +fireData.attributes[FIELD_NAME_LON].toFixed(2);;
                 const contentHtmlStr = `
                     <div class='customized-popup-header'>
-                        <span class='font-size--3'>Start Date: ${moment(fireData.attributes.START_DATE).format("MMMM Do, YYYY")}</span>
+                        <span class='font-size--3'>Start Date: ${fireData.attributes[FIELD_NAME_START_DAT_FORMATTED]}</span>
                         <span class='js-close-info-window icon-ui-close avenir-bold cursor-pointer font-size--3 right'></span>
                     </div>
                     <div class='leader-quarter trailer-quarter'>
-                        <span>
-                            The ${fireData.attributes[FIRE_NAME_FIELD_NAME]} fire is estimated to be ${fireData.attributes[AFFECTED_AREA_FIELD_NAME]} acres
-                            and <strong>${fireData.attributes[PCT_CONTAINED_FIELD_NAME]}%</strong> contained.
-                        </span><br>
+                        <p class='trailer-quarter'> 
+                            The ${fireData.attributes[FIRE_NAME_FIELD_NAME]} fire is estimated to be ${fireData.attributes[AFFECTED_AREA_FIELD_NAME]} acres and <strong>${fireData.attributes[PCT_CONTAINED_FIELD_NAME]}%</strong> contained.
+                        </p>
+                        <p class='font-size--3 trailer-quarter'>
+                            ${stateFullName} (${lat}, ${lon})
+                        </p>
                     <div>
                 `;
                 this.map.infoWindow.setContent(contentHtmlStr);
                 this.map.infoWindow.show(fireGeom);
+                appView.setSquareReferenceBoxPosition(fireGeomInScreenPoint);
             };
 
             this.hideInforWindow = function(){
                 this.map.infoWindow.hide();
+                appView.setSquareReferenceBoxPosition(null);
             };
 
             this.zoomToFire = function(fireID=''){
@@ -421,7 +459,6 @@ require([
 
                 function requestSuccessHandler(response) {
                     callback(response.features);
-                    // addSearchInputOnTypeEventHandler(response.features);
                 }
         
                 function requestErrorHandler(error) {
@@ -431,11 +468,25 @@ require([
                 wildfireDataRequest.then(requestSuccessHandler, requestErrorHandler);
             };
 
-            this._setLayerDefinitionsForWildfireLayer =function(whereClause){
+            // create def expression to filter fire perimeter layer using fire names
+            this.getDefExpForFirePerimeterLayer = (fires=[])=>{
+                const defExp = fires.length 
+                    ? fires.map(fire=>{
+                        const fireName = fire.attributes[FIRE_NAME_FIELD_NAME].replace("'", " ")
+                        return `${FIRE_NAME_FIELD_NAME} = '${fireName}'`;
+                    }).join(' OR ')
+                    :`${FIRE_NAME_FIELD_NAME} = ''`
+
+                return defExp;
+            };
+
+            this._setLayerDefinitionsForWildfireLayer =function(whereClause, queryResults){
                 const layerDefs = [whereClause];
-                // console.log('setLayerDef', whereClause);
-                this.operationalLayers.forEach(function(layer){
-                    // console.log(layer);
+                this.operationalLayers.forEach((layer)=>{
+                    if(layer.title === LAYER_NAME_ACTIVE_FIRE){
+                        const defExpForPerimeterLayer = this.getDefExpForFirePerimeterLayer(queryResults);
+                        layerDefs[LAYER_INDEX_ACTIVE_FIRE_PERIMETER] = defExpForPerimeterLayer;
+                    }
                     layer.layerObject.setLayerDefinitions(layerDefs);
                 });
             };
@@ -450,13 +501,12 @@ require([
                     this.setLayerDrawingOptions(item);
                 });
 
-                // console.log('renderer.breaks', operationalLayers[0].layerObject.layerDrawingOptions[0].renderer.breaks);
                 return operationalLayers;
             };
 
             this.getWildfireLayerRendererByTitle = function(layerTitle){
                 const rendererInfo = JSON.parse(JSON.stringify(this.wildfireClassBreakRendererInfo));
-                const symbolsInfo = (layerTitle === 'Active_Fire_Report') ? wildfireLayerSymbolsLookup['default'] : wildfireLayerSymbolsLookup['background'];
+                const symbolsInfo = (layerTitle === LAYER_NAME_ACTIVE_FIRE) ? wildfireLayerSymbolsLookup['default'] : wildfireLayerSymbolsLookup['background'];
                 
                 rendererInfo.classBreakInfos = rendererInfo.classBreakInfos.map(function(info, index){
                     const symbol = new PictureMarkerSymbol(symbolsInfo[index]);
@@ -467,17 +517,37 @@ require([
                 return new ClassBreaksRenderer(rendererInfo);
             };
 
+            this.getRendererForFirePerimeter = ()=>{
+                const sfs = new SimpleFillSymbol(
+                    SimpleFillSymbol.STYLE_SOLID,
+                    new SimpleLineSymbol( SimpleLineSymbol.STYLE_SOLID, new Color([103, 0, 67, .9]), 1),
+                    new Color([103, 0, 67, .4])
+                );
+                const renderer = new SimpleRenderer(sfs);
+                return renderer;
+            };
+
             this.setLayerDrawingOptions = function(operationalLayer){
                 const layer = operationalLayer.layerObject;
                 const layerTitle = operationalLayer.title;
+                const layerOpacity = (layerTitle === LAYER_NAME_ACTIVE_FIRE) ? .75 : .5;
                 const layerDrawingOptions = [];
-                const layerDrawingOption = new LayerDrawingOptions();
-                const layerOpacity = (layerTitle === 'Active_Fire_Report') ? .75 : .5;
+                const activeFireDrawingOption = this.getLayerDrawingOption(layerTitle);
+                layerDrawingOptions[0] = activeFireDrawingOption;
 
-                layerDrawingOption.renderer = this.getWildfireLayerRendererByTitle(layerTitle);
-                layerDrawingOptions[0] = layerDrawingOption;
+                if(layerTitle === LAYER_NAME_ACTIVE_FIRE){
+                    const activeFirePerimeterDrawingOption = this.getLayerDrawingOption(layerTitle, LAYER_INDEX_ACTIVE_FIRE_PERIMETER);
+                    layerDrawingOptions[LAYER_INDEX_ACTIVE_FIRE_PERIMETER] = activeFirePerimeterDrawingOption;
+                }
+
                 layer.setLayerDrawingOptions(layerDrawingOptions);
                 layer.setOpacity(layerOpacity);
+            };
+
+            this.getLayerDrawingOption = (layerTitle, layerID=0)=>{
+                const layerDrawingOption = new LayerDrawingOptions();
+                layerDrawingOption.renderer = (layerID === 0) ? this.getWildfireLayerRendererByTitle(layerTitle) : this.getRendererForFirePerimeter();
+                return layerDrawingOption;
             };
 
             this.zoomToExtentOfAllFires = function(){
@@ -499,7 +569,9 @@ require([
             this.identifyTaskOnSuccessHandler = (results)=>{
                 if(results.length){
                     const fireName = results[0].value;
-                    this.showInfoWindow(fireName);
+                    const fireID = this.getFireIdByName(fireName);
+                    // console.log(fireID);
+                    this.showInfoWindow(fireID);
                 }
             };
 
@@ -518,10 +590,12 @@ require([
             this.setMapEeventHandlers = function(map){
 
                 map.on("click", (evt)=>{
+                    this.hideInforWindow();
                     this.execIdentifyTask(evt.mapPoint);
                 });
 
                 map.on('extent-change', (evt)=>{
+                    this.hideInforWindow();
                     wildfireModel.setExtent(evt.extent);
                     this.searchWildfire();
                 }); 
@@ -567,253 +641,203 @@ require([
                 return new Point( {"x": feature.attributes.LONGITUDE, "y": feature.attributes.LATITUDE, "spatialReference": {"wkid": 4326 } });
             };
 
+            this.convertGeomToScreenPoint = (geom)=>{
+                const screenPos = screenUtils.toScreenPoint(this.map.extent, this.map.width, this.map.height, geom);
+                return screenPos;
+            };
+
             this.startUp();
         };
 
-        // function populateArrayChartForWildfires(wildfireData){
-        //     // console.log('calling populateArrayChartForWildfires', wildfireData);
-        //     var legendGrid = $('.legend-grid');
-        //     var legendIcons = [];
-        //     wildfireData.sort(function(a, b) {
-        //         return +b.attributes[AFFECTED_AREA_FIELD_NAME] - +a.attributes[AFFECTED_AREA_FIELD_NAME];
-        //     });
-        //     // //only show top numbers of wildfires in the list
-        //     // var wildfireDataToPopulate = wildfireData.filter(function(d, i){
-        //     //     return i < 60;
-        //     // });
-        //     wildfireData.forEach(function(d) {
-        //         var legendClass;
-        //         var area = d.attributes[AFFECTED_AREA_FIELD_NAME];
-        //         var pctContained = d.attributes[PCT_CONTAINED_FIELD_NAME];
-        //         if(area >= 110720){
-        //             legendClass = 1;
-        //         } else if(area < 110720 && area >= 40906){
-        //             legendClass = 2;
-        //         } else if(area < 40906 && area >= 11067){
-        //             legendClass = 3;
-        //         } else {
-        //             legendClass = 4;
-        //         }
-        //         var legendIconStr = `
-        //             <div class="legend-grid-item block trailer-half">
-        //                 <div class="legend-icon legend-class-${legendClass}">
-        //                     <div class='bottom-pct-indicator'>
-        //                         <div class='highlight-bar' style="width: ${pctContained}%;"></div>
-        //                     </div>
-        //                 </div>
-        //             </div>
-        //         `;
-        //         legendIcons.push(legendIconStr);
-        //     });
-
-        //     var legendGridItems = $(legendIcons.join(''));
-        //     legendGrid.empty();
-        //     legendGrid.append(legendGridItems);
-        //     // console.log(wildfireDataToPopulate);
-
-        //     legendGridItems.on('mouseover', function(evt){
-        //         var itemIdx = $(this).index();
-        //         var selectedFeature = wildfireData[itemIdx];
-        //         var selectedFeatureGeom = new Point( {"x": selectedFeature.attributes.LONGITUDE, "y": selectedFeature.attributes.LATITUDE, "spatialReference": {"wkid": 4326 } });
-        //         var contentHtmlStr = `
-        //             <div class='customized-popup-header'>
-        //                 <span class='font-size--3'>Start Date: ${moment(selectedFeature.attributes.START_DATE).format("MMMM Do, YYYY")}</span>
-        //                 <span class='icon-ui-close avenir-bold font-size--3 right'></span>
-        //             </div>
-        //             <div class='leader-quarter trailer-quarter'>
-        //                 <span>
-        //                     The ${selectedFeature.attributes[FIRE_NAME_FIELD_NAME]} fire is estimated to be ${selectedFeature.attributes.AREA_} acres
-        //                     and <strong>${selectedFeature.attributes.PER_CONT}%</strong> contained.
-        //                 </span><br>
-        //             <div>
-        //         `;
-        //         wildFireVizApp.map.infoWindow.setContent(contentHtmlStr);
-        //         wildFireVizApp.map.infoWindow.show(selectedFeatureGeom);
-        //     });
-
-        //     legendGridItems.on('mouseout', function(evt){
-        //         wildFireVizApp.map.infoWindow.hide();
-        //     });
-
-        //     addClickHandlerToLegendGridItems(wildfireData);
-        // }
-
-        // function addClickHandlerToLegendGridItems(wildfireData){
-        //     $('.legend-grid-item').on('click', function(evt){
-        //         var itemIdx = $(this).index();
-        //         var selectedFeature = wildfireData[itemIdx];
-        //         var selectedFeatureGeom = new Point( {"x": selectedFeature.attributes.LONGITUDE, "y": selectedFeature.attributes.LATITUDE, "spatialReference": {"wkid": 4326 } });
-        //         wildFireVizApp.map.centerAndZoom(selectedFeatureGeom, 10);
-        //     });
-        // }
-
-        function populateSuggestionList(arrOfSuggestedFireNames, inputTextValue){
-            var suggestionListContainer = $('.suggestion-list-container');
-            suggestionListContainer.empty();
-            if(arrOfSuggestedFireNames.length){
-                arrOfSuggestedFireNames = arrOfSuggestedFireNames.map(function(d){
-                    return "<div class='suggestion-item'><span class='font-size--2'>" + d + "</span></div>"
-                });
-                suggestionListContainer.append(arrOfSuggestedFireNames.join(''));
-                // suggestionListContainer.removeClass('hide');
-                toggleSuggestionList(true);
-                addClickEventHandlerToSuggestionListItems(suggestionListContainer);
-            } else {
-                suggestionListContainer.addClass('hide');
-                if(!inputTextValue){
-                    wildFireVizApp.searchWildfire();
-                }
-            }
-        }
-
-        function addClickEventHandlerToSuggestionListItems(suggestionListContainer){
-            suggestionListContainer.find('.suggestion-item').on('click', function(evt){
-                var itemText = $(this).text();
-                $('.fire-name-search-input').val(itemText);
-                // wildFireVizApp.setSelectedFireName(itemText);
-                wildfireModel.setName(itemText);
-
-                toggleSearchBtnIcon(itemText);
-                toggleSuggestionList(false);
-                // suggestionListContainer.addClass('hide');
-                wildFireVizApp.searchWildfire();
-            });
-        }
-
-        function addSearchInputOnTypeEventHandler(){
-            $('.fire-name-search-input').unbind('keyup').on( "keyup", fireNameSearchInputOnKeyupHandler); 
-            // console.log(arrOfWildfireNames);
-        }
-
-        function fireNameSearchInputOnKeyupHandler(evt){
-            // let arrOfWildfireNames = wildFireVizApp.getArrOfAllWildfires(true);
-            let arrOfWildfireNames = wildFireVizApp.getListOfFires(true);
-            let currentText = $(this).val();
-            let textToSearch = new RegExp('^' + currentText + '.*$', 'i');
-            let matchedNames = [];
-            if(currentText.length >= 2){
-                matchedNames = arrOfWildfireNames.filter(function(d, i){
-                    return d.match(textToSearch);
-                }).splice(0, 5);
-            } 
-            // wildFireVizApp.setSelectedFireName(currentText);
-            wildfireModel.setName(currentText);
-
-            toggleSearchBtnIcon(currentText);
-            populateSuggestionList(matchedNames, currentText);
-        }
-
-        function affectedAreaFilterOnClickHandler(evt){
-            const targetFilter = $(this);
-            targetFilter.toggleClass('checked ');
-
-            const targetFilterIndex = +targetFilter.attr('data-filter-index');
-            const isTargetFilterChecked = targetFilter.hasClass('checked');
-
-            const targetCBox = targetFilter.find('.fa');
-            if(isTargetFilterChecked){
-                targetCBox.addClass('fa-check-square-o');
-                targetCBox.removeClass('fa-square-o');
-            } else {
-                targetCBox.removeClass('fa-check-square-o');
-                targetCBox.addClass('fa-square-o');
-            }
-
-            wildfireModel.setAffectedAreaRendererVisibilityByIndex(targetFilterIndex, isTargetFilterChecked);
-            wildFireVizApp.searchWildfire();
-        }
-
-        function searchBtnOnClickHandler(evt){
-            let searchBtn = $(this);
-            let searchBtnIcon = searchBtn.find('.fa');
-            let isClickToClickSearchText = searchBtnIcon.hasClass('fa-times');
-
-            if(isClickToClickSearchText){
-                $('.fire-name-search-input').val('');
-                // wildFireVizApp.setSelectedFireName(null);
-                wildfireModel.setName(null);
-
-                toggleSearchBtnIcon(null);
-                wildFireVizApp.searchWildfire();
-            } 
-        }
-
-        function toggleSuggestionListBtnOnClickHandler(){
-            let isSuggestionListInvisible = $('.suggestion-list-container').hasClass('hide');
-
-            if(isSuggestionListInvisible){
-                // let arrOfWildfireNames = wildFireVizApp.getArrOfAllWildfires(true);
-                let arrOfWildfireNames = wildFireVizApp.getListOfFires(true);
-                populateSuggestionList(arrOfWildfireNames);
-            } else {
-                toggleSuggestionList(false);
-            }
-        }
-
-        function updateToggleSuggestionListBtnIcon(){
-            let isSuggestionListInvisible = $('.suggestion-list-container').hasClass('hide');
-            let targetBtn = $('.toggle-suggestion-list-btn');
-            let toggleSuggestionListBtnIcon = targetBtn.find('.fa');
-            if(isSuggestionListInvisible){
-                toggleSuggestionListBtnIcon.addClass('fa-caret-down');
-                toggleSuggestionListBtnIcon.removeClass('fa-caret-up');
-            } else {
-                toggleSuggestionListBtnIcon.addClass('fa-caret-up');
-                toggleSuggestionListBtnIcon.removeClass('fa-caret-down');
-            }
-        }
-
-        function toggleSuggestionList(isVisible){
-            var suggestionListContainer = $('.suggestion-list-container');
-            if(isVisible){
-                suggestionListContainer.removeClass('hide');
-            } else {
-                suggestionListContainer.addClass('hide');
-            }   
-            updateToggleSuggestionListBtnIcon();
-        }
-
-        function toggleSearchBtnIcon(selectedFireName){
-            // let selectedFireName = wildFireVizApp.getSelectedFireName();
-            let searchBtn = $('.search-by-name-btn');
-            let searchBtnIcon = searchBtn.find('.fa');
-            if(selectedFireName){
-                searchBtnIcon.addClass('fa-times');
-                searchBtnIcon.removeClass('fa-search');
-            } else {
-                searchBtnIcon.removeClass('fa-times');
-                searchBtnIcon.addClass('fa-search'); 
-                toggleSuggestionList(false);
-            }
-        }
-
-        //attach app event handlers
-        $('.js-affected-area-filter').on('click', affectedAreaFilterOnClickHandler);
-
-        $('.search-by-name-btn').on('click', searchBtnOnClickHandler);
-
-        $('.toggle-suggestion-list-btn').on('click', toggleSuggestionListBtnOnClickHandler);
-
-
         const AppView = function(){
 
-            this.wildfireGrids = null;
-            this.wildfireCards = null;
+            // cache dom elements
+            const $numOfFires = $('.val-holder-num-of-fires');
+            const $fireNameSearchInput = $('.fire-name-search-input');
+            const $squareReferenceBox = $('.square-reference-box');
 
+            // app view components
+            this.wildfireGrids = null;
+            this.wildfireTimeline = null;
+            // this.wildfireCards = null;
+            this.fireNameDropdownMenu = null;
+
+            // state observers
+            this.fireDataOberver = null;
+            this.fireSummaryInfoVisibilityOberver = null;
+            
             this.init = function(){
                 this.wildfireGrids = new WildfiresGrid(WILDFIRE_GRID_CONTAINER_ID);
-                this.wildfireCards = new WildfiresCards(WILDFIRE_CARD_CONTAINER_ID);
+                // this.wildfireCards = new WildfiresCards(WILDFIRE_CARD_CONTAINER_ID);
+                this.wildfireTimeline = new WildfiresTimeline(WILDFIRE_TIMELINE_CONTAINER_ID);
+                this.fireNameDropdownMenu = new AutoCompleteDropdownMenu('fire-name-dropdown-menu');
+
+                this.initFireDataObserser();
+                this.initFireSummaryInfoVisibilityOberver();
+            };
+
+            this.initFireDataObserser = function(){
+                this.fireDataOberver = new Observable();
+                this.fireDataOberver.subscribe(this.wildfireGrids.populate);
+                // this.wildfireDataOberver.subscribe(this.wildfireCards.populate);
+                this.fireDataOberver.subscribe(this.wildfireTimeline.populate);
+                this.fireDataOberver.subscribe(this.updateNumOfFiresVal);
             };
 
             this.populateWildfires = function(fires=[]){
-                console.log(fires);
-                this.wildfireGrids.populate(fires);
-                this.wildfireCards.populate(fires);
+                this.fireDataOberver.notify(fires);
+            };
+
+            this.updateNumOfFiresVal = function(fires=[]){
+                $numOfFires.text(fires.length);
+            }
+
+            this.initFireSummaryInfoVisibilityOberver = function(){
+                this.fireSummaryInfoVisibilityOberver = new Observable();
+                this.fireSummaryInfoVisibilityOberver.subscribe(this.wildfireGrids.toggle);
+                this.fireSummaryInfoVisibilityOberver.subscribe(this.wildfireTimeline.toggle);
+            };
+
+            this.toggleFireSummaryInfo = function(containerID){
+                this.fireSummaryInfoVisibilityOberver.notify(containerID);
+            };
+
+            this.setFilterLabel = (breakInfos=[])=>{
+                // console.log(breakInfos);
+                breakInfos.forEach((d,idx)=>{
+                    const labelText = abbreviate_number(+d[1]);
+                    const filterLabel = $('.filter-wrap[data-filter-index="' + idx + '"]').find('.filter-label');
+                    filterLabel.text(labelText);
+                });
+            };
+
+            this.setSquareReferenceBoxPosition = (screenPos)=>{
+
+                if(!screenPos){
+                    $squareReferenceBox.addClass('hide');
+                } else {
+                    const posOffset = $squareReferenceBox.width() / 2;
+                    $squareReferenceBox.css('top', screenPos.y - posOffset);
+                    $squareReferenceBox.css('left', screenPos.x - posOffset);
+                    $squareReferenceBox.removeClass('hide');
+                    // console.log(screenPos);
+                }
+            };
+
+            const WildfiresTimeline = function(containerID){
+
+                const conatiner = $('#'+containerID);
+
+                const prepareData = function(fires=[]){
+                    const firesByDate = {};
+                    const distinctDates = [];
+
+                    fires.sort((a,b)=>{
+                        return a.attributes[FIELD_NAME_START_DATE] - b.attributes[FIELD_NAME_START_DATE];
+                    });
+
+                    fires.forEach(fire=>{
+                        const date = fire.attributes[FIELD_NAME_START_DATE];
+                        if(!firesByDate[date]){
+                            firesByDate[date] = {
+                                startDate: date,
+                                fires: [fire],
+                                isFirstItemInMonth: false
+                            };
+                            distinctDates.push(date);
+                        } else {
+                            firesByDate[date].fires.push(fire);
+                        }
+                    });
+
+                    fires = distinctDates.map( (d, idx)=>{
+                        const prevDate = distinctDates[idx - 1];
+                        const isMonFromCurDateDiff = compareMonthVal(d, prevDate);
+                        if(isMonFromCurDateDiff){
+                            firesByDate[d].isFirstItemInMonth = true;
+                        }
+                        return firesByDate[d];
+                    });
+
+                    return fires;
+                };
+
+                const compareMonthVal = (d1, d2)=>{
+                    d1 = new Date(d1);
+                    d2 = new Date(d2);
+                    return (d1 && d2 && d1.getMonth() !== d2.getMonth()) ? true: false; 
+                };
+
+                this.toggle = function(targetContainerID){
+                    if(targetContainerID === containerID){
+                        conatiner.removeClass('hide');
+                    } else {
+                        conatiner.addClass('hide');
+                    }
+                };
+
+                this.populate = function(fires=[]){
+
+                    fires = prepareData(fires);
+
+                    const timelineItemsHtml = fires.map((d, idx)=>{
+
+                        const startDate = moment(d.startDate).format("MMM Do");
+                        const monthName = moment(d.startDate).format("MMMM");
+
+                        const monthTitleHtmlStr = `
+                            <div class='timeline-month-title text-center'>
+                                <div class='padding-leader-quarter padding-trailer-quarter '>
+                                    <span class'avenir-bold'>${monthName}</span>
+                                </div>
+                            </div>
+                        `;
+
+                        const fireInfoHtmlStrs = d.fires.map(fire=>{
+                            const pctContained = fire.attributes[PCT_CONTAINED_FIELD_NAME];
+                            const fireName = fire.attributes[FIRE_NAME_FIELD_NAME];
+                            const affectedArea = fire.attributes[AFFECTED_AREA_FIELD_NAME];
+                            const legendClass = wildfireModel.getRendererBreakIndex(affectedArea);
+                            const fireID = fire.attributes[FIELD_NAME_INTERNAL_ID];
+
+                            const htmlStr = `
+                                <div class='trailer-1 fire-info'>
+                                    <div class='inline-block font-size--3 padding-left-half margin-right-half'><span class='cursor-pointer js-show-info-window js-zoom-to-fire' data-fire-id="${fireID}"><strong>${capitalizeFirstLetter(fireName)} Fire</strong>  - ${pctContained}% contained</span></div>
+                                    <div class="legend-icon legend-class-${legendClass}"></div>
+                                </div>
+                            `;
+                            return htmlStr;
+                        }).join('');
+
+                        const timelineItemHtmlStr = `
+                            ${d.isFirstItemInMonth ? monthTitleHtmlStr : ''}
+                            <div class='timeline-item'>
+                                <div class='date-info font-size--2'>${startDate}</div>
+                                <div class='fire-info-wrap text-right'>
+                                    ${fireInfoHtmlStrs}
+                                </div>
+                            </div>
+                        `;
+
+                        return timelineItemHtmlStr;
+
+                    }).join('');
+                    
+                    conatiner.html(timelineItemsHtml);
+                };
             };
 
             const WildfiresGrid = function(containerID){
 
                 const conatiner = $('#'+containerID);
+
+                this.toggle = function(targetContainerID){
+                    if(targetContainerID === containerID){
+                        conatiner.removeClass('hide');
+                    } else {
+                        conatiner.addClass('hide');
+                    }
+                };
 
                 this.populate = function(fires=[]){
 
@@ -825,7 +849,7 @@ require([
                         const fireID = d.attributes[FIELD_NAME_INTERNAL_ID];
 
                         const gridItemHtmlStr = `
-                            <div class="legend-grid-item block trailer-half js-zoom-to-fire" data-fire-id="${fireID}">
+                            <div class="js-show-info-window block trailer-half js-zoom-to-fire" data-fire-id="${fireID}">
                                 <div class="legend-icon legend-class-${legendClass}">
                                     <div class='bottom-pct-indicator'>
                                         <div class='highlight-bar' style="width: ${pctContained}%;"></div>
@@ -842,43 +866,111 @@ require([
                 };
             };
 
-            const WildfiresCards = function(containerID){
+            const AutoCompleteDropdownMenu = function(containerID){
 
                 const conatiner = $('#'+containerID);
+                const parentContainer = conatiner.parent();
 
-                this.populate = function(fires=[]){
-
-                    const cardItemsHtml = fires.map(function(d) {
-                        const pctContained = d.attributes[PCT_CONTAINED_FIELD_NAME];
-                        const fireName = d.attributes[FIRE_NAME_FIELD_NAME];
-                        const affectedArea = d.attributes[AFFECTED_AREA_FIELD_NAME];
-                        const stateCode = d.attributes[FIELD_NAME_STATE];
-                        const stateFullName = stateNamesLookup[stateCode] ? stateNamesLookup[stateCode] : stateCode;
-                        const lat = +d.attributes[FIELD_NAME_LAT].toFixed(2);
-                        const lon = +d.attributes[FIELD_NAME_LON].toFixed(2);;
-                        const startDate = d.attributes[FIELD_NAME_START_DAT_FORMATTED];
-                        const fireID = d.attributes[FIELD_NAME_INTERNAL_ID];
-                        // const legendClass = wildfireModel.getRendererBreakIndex(affectedArea);
-
-                        const cardHtmlStr = `
-                            <div class='card customized-card trailer-half'>
-                                <div class='card-content'>
-                                    <p class='font-size-0 trailer-0 avenir-bold'>${fireName}</p>
-                                    <p class='font-size--3 leader-quarter trailer-quarter'>Started on ${startDate}, the affected area is estimated to be ${affectedArea} acres and ${pctContained}% contained. </p>
-                                    <p class='js-zoom-to-fire font-size--3 trailer-0 right cursor-pointer' data-fire-id="${fireID}"><span class='icon-ui-map-pin'></span>${stateFullName} (${lat}, ${lon})</p>
-                                </div>
-                            </div>
-                        `;
-
-                        return cardHtmlStr;
-
+                this.populate = (fires)=>{
+                    fires = fires || wildFireVizApp.getListOfFires(true);
+                    const dorpdownMenuItemsHtmlStr = fires.map(fire=>{
+                        return `<div class='suggestion-item js-set-suggested-item' data-fire-name="${fire}"><span class='font-size--2'>${fire}</span></div>`;
                     }).join('');
-                    
-                    conatiner.html(cardItemsHtml);
+                    conatiner.html(dorpdownMenuItemsHtmlStr);
                 };
+
+                this.getCountOfDropdownMenuItems = ()=>{
+                    return conatiner.children().length;
+                }
+
+                this.show = ()=>{
+                    conatiner.removeClass('hide');
+                    this.toggleIsDropdownVisible(true);
+                };
+
+                this.hide = ()=>{
+                    conatiner.addClass('hide');
+                    this.toggleIsDropdownVisible(false);
+                };
+
+                this.toggleDropdownMenu = ()=>{
+                    conatiner.toggleClass('hide');
+
+                    const isVisible = !conatiner.hasClass('hide');
+                    const isDropdownMenuPopulated = this.getCountOfDropdownMenuItems() ? true : false;
+
+                    if(isVisible && !isDropdownMenuPopulated){
+                        this.populate();
+                    }
+
+                    this.toggleIsDropdownVisible(isVisible);
+                };
+
+                this.setSelectedItem = (fireName='')=>{
+                    parentContainer.find('.fire-name-search-input').val(fireName);
+                    const isFilled = fireName ? true : false;
+                    this.toggleIsSearchInputFilled(isFilled);
+                    this.hide();
+
+                    wildfireModel.setName(fireName);
+                    wildFireVizApp.searchWildfire();
+                };
+
+                this.toggleIsDropdownVisible = (isVisiblefalse)=>{
+                    if(isVisiblefalse){
+                        parentContainer.addClass('is-dropdown-menu-visible');
+                    } else {
+                        parentContainer.removeClass('is-dropdown-menu-visible');
+                    }
+                };
+
+                this.toggleIsSearchInputFilled = (isFilled=false)=>{
+                    if(isFilled){
+                        parentContainer.addClass('is-search-input-filled');
+                    } else {
+                        parentContainer.removeClass('is-search-input-filled');
+                    }
+                };
+
             };
 
-            const initEventHandlers = (function(){
+            // const WildfiresCards = function(containerID){
+
+            //     const conatiner = $('#'+containerID);
+
+            //     this.populate = function(fires=[]){
+
+            //         const cardItemsHtml = fires.map(function(d) {
+            //             const pctContained = d.attributes[PCT_CONTAINED_FIELD_NAME];
+            //             const fireName = d.attributes[FIRE_NAME_FIELD_NAME];
+            //             const affectedArea = d.attributes[AFFECTED_AREA_FIELD_NAME];
+            //             const stateCode = d.attributes[FIELD_NAME_STATE];
+            //             const stateFullName = stateNamesLookup[stateCode] ? stateNamesLookup[stateCode] : stateCode;
+            //             const lat = +d.attributes[FIELD_NAME_LAT].toFixed(2);
+            //             const lon = +d.attributes[FIELD_NAME_LON].toFixed(2);;
+            //             const startDate = d.attributes[FIELD_NAME_START_DAT_FORMATTED];
+            //             const fireID = d.attributes[FIELD_NAME_INTERNAL_ID];
+            //             // const legendClass = wildfireModel.getRendererBreakIndex(affectedArea);
+
+            //             const cardHtmlStr = `
+            //                 <div class='card customized-card trailer-half'>
+            //                     <div class='card-content'>
+            //                         <p class='font-size-0 trailer-0 avenir-bold'>${fireName}</p>
+            //                         <p class='font-size--3 leader-quarter trailer-quarter'>Started on ${startDate}, the affected area is estimated to be ${affectedArea} acres and ${pctContained}% contained. </p>
+            //                         <p class='js-zoom-to-fire font-size--3 trailer-0 right cursor-pointer' data-fire-id="${fireID}"><span class='icon-ui-map-pin'></span>${stateFullName} (${lat}, ${lon})</p>
+            //                     </div>
+            //                 </div>
+            //             `;
+
+            //             return cardHtmlStr;
+
+            //         }).join('');
+                    
+            //         conatiner.html(cardItemsHtml);
+            //     };
+            // };
+
+            const initEventHandlers = (()=>{
                 const $body = $('body');
 
                 $body.on('click', '.js-zoom-to-fire', function(){
@@ -886,28 +978,118 @@ require([
                     wildFireVizApp.zoomToFire(targetFireID);
                 });
 
-                $body.on('mouseenter', '.legend-grid-item', function(){
+                $body.on('mouseenter', '.js-show-info-window', function(){
                     const targetFireID = $(this).attr('data-fire-id');
                     wildFireVizApp.showInfoWindow(targetFireID);
                 });
 
-                $body.on('mouseleave', '.legend-grid-item', function(){
+                $body.on('mouseleave', '.js-show-info-window', function(){
                     wildFireVizApp.hideInforWindow();
                 });
 
                 $body.on('click', '.js-close-info-window', function(){
                     wildFireVizApp.hideInforWindow();
-                })
+                });
+
+                $body.on('click', '.js-affected-area-filter', function(){
+                    const targetFilter = $(this);
+                    targetFilter.toggleClass('checked');
+        
+                    const targetFilterIndex = +targetFilter.attr('data-filter-index');
+                    const isVisible = targetFilter.hasClass('checked');
+        
+                    wildfireModel.setAffectedAreaRendererVisibilityByIndex(targetFilterIndex, isVisible);
+                    wildFireVizApp.searchWildfire();
+                });
+
+                $body.on('click', '.js-toggle-fire-summary-info-container', function(){
+                    const target = $(this);
+                    const targetContainerID = target.attr('data-target-container');
+                    target.siblings().removeClass('is-active');
+                    target.addClass('is-active');
+                    appView.toggleFireSummaryInfo(targetContainerID)
+                });
+
+                $body.on('click', '.toggle-suggestion-list-btn', function(){
+                    appView.fireNameDropdownMenu.toggleDropdownMenu();
+                });
+
+                $body.on('click', '.js-set-suggested-item', function(){
+                    const targetFireName = $(this).attr('data-fire-name');
+                    appView.fireNameDropdownMenu.setSelectedItem(targetFireName);
+                });
+
+                $body.on('click', '.js-clear-suggested-item', function(){
+                    appView.fireNameDropdownMenu.setSelectedItem(null);
+                    appView.fireNameDropdownMenu.populate();
+                });
+
+                $fireNameSearchInput.on('keyup', function(){
+                    const currentText = $(this).val();
+                    const matchedNames = wildFireVizApp.getMatchedFireNames(currentText);
+
+                    appView.fireNameDropdownMenu.populate(matchedNames);
+
+                    if(currentText){
+                        appView.fireNameDropdownMenu.toggleIsSearchInputFilled(true);
+                    } else {
+                        appView.fireNameDropdownMenu.toggleIsSearchInputFilled(false);
+                    }
+
+                    if(matchedNames.length){
+                        appView.fireNameDropdownMenu.show();
+                    } else {
+                        appView.fireNameDropdownMenu.hide();
+                    }
+                });
 
             })();
 
             this.init();
         };
 
+        const Observable = function(){
+            this.observers = [];
+
+            this.subscribe = (f)=>{
+              this.observers.push(f);
+            };
+          
+            this.unsubscribe = (f)=>{
+              this.observers = this.observers.filter(subscriber => subscriber !== f);
+            }
+
+            this.notify = (data)=>{
+                // console.log('notify', data);
+                this.observers.forEach(observer => observer(data));
+            }
+        }
+
         //initialize app
         const wildfireModel = new WildFireDataModel();
         const wildFireVizApp = new WildFireVizApp();
         const appView = new AppView();
+
+        // util functions
+        const abbreviate_number = function(num, fixed) {
+            if (num === null) { return null; } // terminate early
+            if (num === 0) { return '0'; } // terminate early
+            fixed = (!fixed || fixed < 0) ? 0 : fixed; // number of decimal places to show
+            fixed = (num > 10000) ? 0 : 1
+            var b = (num).toPrecision(2).split("e"), // get power
+                k = b.length === 1 ? 0 : Math.floor(Math.min(b[1].slice(1), 14) / 3), // floor at decimals, ceiling at trillions
+                c = k < 1 ? num.toFixed(0 + fixed) : (num / Math.pow(10, k * 3) ).toFixed(fixed), // divide by power
+                d = c < 0 ? c : Math.abs(c), // enforce -0 is 0
+                e = d + ['', 'K', 'M', 'B', 'T'][k]; // append power
+            return e;
+        }
+
+        function capitalizeFirstLetter(strings) {
+            return strings.split(' ').map(s=>{
+                s = s.toLowerCase();
+                return s.charAt(0).toUpperCase() + s.slice(1);
+            }).join(' ');
+        }
 
     });
 
