@@ -19,6 +19,7 @@ require([
     "esri/symbols/SimpleFillSymbol",
     "esri/symbols/SimpleLineSymbol",
     "esri/Color",
+    "dojo/_base/connect",
     "dojo/domReady!"
 ], function(
     arcgisUtils, 
@@ -39,7 +40,8 @@ require([
     PictureMarkerSymbol,
     SimpleFillSymbol,
     SimpleLineSymbol,
-    Color
+    Color,
+    connect
     // SimpleLineSymbol
 ){
     $(document).ready(function () {
@@ -329,11 +331,13 @@ require([
                 arcgisUtils.createMap(webMapID, "mapDiv").then(response=>{
                     // set map using the map object from response
                     const map = response.map;
+                    connect.disconnect(response.clickEventHandle);
+
                     this.setMap(map);
                     this.setMapEeventHandlers(map);
                     this.setIdentifyTaskAndParams(map);
                     this.setOperationalLayers(response);
-
+                    
                     this.mapOnReadyHandler();
                 });
             };
@@ -426,7 +430,7 @@ require([
                     </div>
                     <div class='leader-quarter trailer-quarter'>
                         <p class='trailer-quarter'> 
-                            The ${fireData.attributes[FIRE_NAME_FIELD_NAME]} fire is estimated to be ${fireData.attributes[AFFECTED_AREA_FIELD_NAME]} acres and <strong>${fireData.attributes[PCT_CONTAINED_FIELD_NAME]}%</strong> contained.
+                            The ${fireData.attributes[FIRE_NAME_FIELD_NAME]} fire is estimated to be ${numberWithCommas(fireData.attributes[AFFECTED_AREA_FIELD_NAME])} acres and <strong>${fireData.attributes[PCT_CONTAINED_FIELD_NAME]}%</strong> contained.
                         </p>
                         <p class='font-size--3 trailer-quarter'>
                             ${stateFullName} (${lat}, ${lon})
@@ -1082,6 +1086,10 @@ require([
                 d = c < 0 ? c : Math.abs(c), // enforce -0 is 0
                 e = d + ['', 'K', 'M', 'B', 'T'][k]; // append power
             return e;
+        }
+
+        const numberWithCommas = (x) => {
+            return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
         }
 
         function capitalizeFirstLetter(strings) {

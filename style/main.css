@@ -24,7 +24,7 @@
     height: 100%;
     top: 0;
     right: 0;
-    z-index: 1000;
+    z-index: 100;
     background-color: rgba(26, 0, 17, 0.8);
     overflow: auto;
     color: #B77600;
@@ -325,6 +325,21 @@
 
 .fire-filters-title {
     opacity: .85;
+}
+
+.customized-modal {
+    background-color: rgba(26, 0, 17, 0.8);
+    color: #B77600;
+}
+
+.customized-modal .btn {
+    color: #B77600;
+    background: rgba(103,0,67, 0);
+    border-color: rgba(103,0,67, .9);
+}
+
+.customized-modal a {
+    color: #F2B240;
 }
 
 
