@@ -93,8 +93,12 @@
     align-items: center;
 }
 
+.filter-wrap {
+    cursor: pointer;
+}
+
 .filter-wrap .fa-square-o {
-    display: initial;
+    display: inline-block;
 }
 
 .filter-wrap .fa-check-square-o {
@@ -106,7 +110,7 @@
 }
 
 .filter-wrap.checked .fa-check-square-o {
-    display: initial;
+    display: inline-block;
 }
 
 .legend-icon {
@@ -188,7 +192,7 @@
 
 .search-input-wrap .fa-search, 
 .search-input-wrap .fa-caret-down {
-    display: initial;
+    display: inline-block;
 }
 
 .search-input-wrap .fa-times, 
@@ -203,7 +207,7 @@
 
 .search-input-wrap.is-search-input-filled .fa-times,
 .search-input-wrap.is-dropdown-menu-visible .fa-caret-up {
-    display: initial;
+    display: inline-block;
 }
 
 .esriPopup .contentPane {
