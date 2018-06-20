@@ -737,7 +737,7 @@ require([
                     const distinctDates = [];
 
                     fires.sort((a,b)=>{
-                        return a.attributes[FIELD_NAME_START_DATE] - b.attributes[FIELD_NAME_START_DATE];
+                        return b.attributes[FIELD_NAME_START_DATE] - a.attributes[FIELD_NAME_START_DATE];
                     });
 
                     fires.forEach(fire=>{
