@@ -294,6 +294,8 @@ require([
 
             let smokeLayerAnimation = null;
             let smokeLayerAnimationFrameTime = null;
+            let smokeLayerAnimationEndTime = null;
+            let smokeLayerAnimationSpeed = 750;
             
             this.startUp = function(){
                 // get the class break info that will be used to render the wildfire activity layer
@@ -580,13 +582,16 @@ require([
 
                     if(!smokeLayerAnimationFrameTime){
                         smokeLayerAnimationFrameTime = this.smokeLayerTimeInfo.timeExtent.startTime;
+
+                        smokeLayerAnimationEndTime = new Date(smokeLayerAnimationFrameTime);
+                        smokeLayerAnimationEndTime = smokeLayerAnimationEndTime.setHours(smokeLayerAnimationFrameTime.getHours() + 24);
                     } else {
 
                         smokeLayerAnimationFrameTime = new Date(smokeLayerAnimationFrameTime);
 
                         smokeLayerAnimationFrameTime = smokeLayerAnimationFrameTime.setHours(smokeLayerAnimationFrameTime.getHours() + 1);
 
-                        if(smokeLayerAnimationFrameTime > this.smokeLayerTimeInfo.timeExtent.endTime){
+                        if(smokeLayerAnimationFrameTime > smokeLayerAnimationEndTime){
                             smokeLayerAnimationFrameTime = this.smokeLayerTimeInfo.timeExtent.startTime;
                         }
 
@@ -601,7 +606,7 @@ require([
 
                     appView.updateSmokeLayerTimeVal(timeDiff);
 
-                }, 1500);
+                }, smokeLayerAnimationSpeed);
             }
 
             this.getWildfireLayerRendererByTitle = function(layerTitle){
