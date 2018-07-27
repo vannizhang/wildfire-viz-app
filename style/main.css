@@ -113,6 +113,28 @@
     display: inline-block;
 }
 
+.smoke-layer-toggle-btn {
+    cursor: pointer;
+}
+
+.smoke-layer-toggle-btn .fa-square-o {
+    display: inline-block;
+}
+
+.smoke-layer-toggle-btn .fa-check-square-o {
+    display: none;
+}
+
+.smoke-layer-toggle-btn.checked .fa-square-o {
+    display: none;
+}
+
+.smoke-layer-toggle-btn.checked .fa-check-square-o {
+    display: inline-block;
+}
+
+
+
 .legend-icon {
     position: relative;
     display: inline-block;

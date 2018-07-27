@@ -19,6 +19,9 @@ require([
     "esri/symbols/SimpleFillSymbol",
     "esri/symbols/SimpleLineSymbol",
     "esri/Color",
+
+    "esri/TimeExtent",
+
     "dojo/_base/connect",
     "dojo/domReady!"
 ], function(
@@ -41,6 +44,9 @@ require([
     SimpleFillSymbol,
     SimpleLineSymbol,
     Color,
+
+    TimeExtent,
+
     connect
     // SimpleLineSymbol
 ){
@@ -50,7 +56,8 @@ require([
 
         //////////////////// App Config Data ////////////////////
 
-        const WEB_MAP_ID = "60f04046d1dc4cf7a8ff66729d872999";
+        // const WEB_MAP_ID = "60f04046d1dc4cf7a8ff66729d872999";
+        const WEB_MAP_ID = 'de31c65a5641422ba9ced5b234ba6e02';
         const WILDFIRE_ACTIVITY_BASE_URL = "https://utility.arcgis.com/usrsvcs/servers/141efcbd82fd4c129f5b784c2bc85229/rest/services/LiveFeeds/Wildfire_Activity/MapServer";
         const REQUEST_URL_WILDFIRE_ACTIVITY = WILDFIRE_ACTIVITY_BASE_URL + "/0/query";
         const REQUEST_URL_WILDFIRE_GENERATE_RENDERER = WILDFIRE_ACTIVITY_BASE_URL + "/dynamicLayer/generateRenderer";
@@ -283,6 +290,10 @@ require([
             this.allWildfires = []; 
             this.allWildfiresLookupTable = {}; // a lookup table of all wildfires data by name
             this.wildfireClassBreakRendererInfo = null;
+            this.smokeLayerTimeInfo = null;
+
+            let smokeLayerAnimation = null;
+            let smokeLayerAnimationFrameTime = null;
             
             this.startUp = function(){
                 // get the class break info that will be used to render the wildfire activity layer
@@ -294,6 +305,10 @@ require([
 
             this.setMap = function(map){
                 this.map = map;
+            };
+
+            this.setSmokeLayerTimeInfo = function(timeInfo){
+                this.smokeLayerTimeInfo = timeInfo;
             };
 
             this.setAllWildfires = function(wildfires){
@@ -321,7 +336,10 @@ require([
             // set the operation layers for wildfire activity
             this.setOperationalLayers = function(webMapResponse){
                 const operationalLayers = this._getWebMapOperationalLayers(webMapResponse);
-                const fireLayerRendererBreaks = operationalLayers[0].layerObject.layerDrawingOptions[0].renderer.breaks
+                const fireLayers = operationalLayers.filter(layer=>{
+                    return layer.title.indexOf('Active_Fire') !== -1;
+                });
+                const fireLayerRendererBreaks = fireLayers[0].layerObject.layerDrawingOptions[0].renderer.breaks
                 this.operationalLayers = operationalLayers;
                 wildfireModel.setAffectedAreaRendererBreaks(fireLayerRendererBreaks);
                 appView.setFilterLabel(fireLayerRendererBreaks);
@@ -487,11 +505,13 @@ require([
             this._setLayerDefinitionsForWildfireLayer =function(whereClause, queryResults){
                 const layerDefs = [whereClause];
                 this.operationalLayers.forEach((layer)=>{
-                    if(layer.title === LAYER_NAME_ACTIVE_FIRE){
-                        const defExpForPerimeterLayer = this.getDefExpForFirePerimeterLayer(queryResults);
-                        layerDefs[LAYER_INDEX_ACTIVE_FIRE_PERIMETER] = defExpForPerimeterLayer;
+                    if(layer.id.indexOf('Wildfire') !== -1){
+                        if(layer.title === LAYER_NAME_ACTIVE_FIRE){
+                            const defExpForPerimeterLayer = this.getDefExpForFirePerimeterLayer(queryResults);
+                            layerDefs[LAYER_INDEX_ACTIVE_FIRE_PERIMETER] = defExpForPerimeterLayer;
+                        }
+                        layer.layerObject.setLayerDefinitions(layerDefs);
                     }
-                    layer.layerObject.setLayerDefinitions(layerDefs);
                 });
             };
 
@@ -500,13 +520,89 @@ require([
                     return layer.layerType === 'ArcGISMapServiceLayer';
                 });
 
+                // console.log(operationalLayers);
+
                 // update the drawing options to use firefly style
                 operationalLayers.forEach(item=>{
-                    this.setLayerDrawingOptions(item);
+                    if(item.title.indexOf('Active_Fire') !== -1){
+                        this.setLayerDrawingOptions(item);
+                    }
+
+                    if(item.title.indexOf('SmokeForecast') !== -1){
+                        // console.log(item.id);
+                        this.setCssStyleForSmokeLayerContainer(item.id);
+                        this.setSmokeLayerTimeInfo(item.layerObject.timeInfo);
+                    }
                 });
 
                 return operationalLayers;
             };
+
+            this.setCssStyleForSmokeLayerContainer = function(layerID){
+                const container = $('#mapDiv_' + layerID);
+                container.css('filter', 'invert(100%) blur(5px) saturate(.4)');
+            };
+
+            this.setMapExtent = function(startTime, endTime){
+
+                startTime = startTime ? new Date(startTime) : this.smokeLayerTimeInfo.timeExtent.startTime;
+                endTime = endTime ? new Date(endTime) : startTime;
+
+                let timeExtent = new TimeExtent();
+                timeExtent.startTime = startTime;
+                timeExtent.endTime = endTime;
+
+                this.map.setTimeExtent(timeExtent);
+            };
+
+            this.toggleSmokeLayer = function(){
+                const smokeLayer = this.operationalLayers.filter(layer=>{
+                    return layer.title.indexOf('SmokeForecast') !== -1
+                })[0];
+
+                const isVisible = !smokeLayer.layerObject.visible;
+
+                if(isVisible){
+                    this.animateSmokeLayer();
+                    smokeLayer.layerObject.show();
+                } else {
+                    clearInterval(smokeLayerAnimation);
+                    smokeLayer.layerObject.hide();
+                    appView.updateSmokeLayerTimeVal(null);
+                }
+
+                // console.log(smokeLayer);
+            }
+
+            this.animateSmokeLayer = function(){
+
+                smokeLayerAnimation = setInterval(()=>{
+
+                    if(!smokeLayerAnimationFrameTime){
+                        smokeLayerAnimationFrameTime = this.smokeLayerTimeInfo.timeExtent.startTime;
+                    } else {
+
+                        smokeLayerAnimationFrameTime = new Date(smokeLayerAnimationFrameTime);
+
+                        smokeLayerAnimationFrameTime = smokeLayerAnimationFrameTime.setHours(smokeLayerAnimationFrameTime.getHours() + 1);
+
+                        if(smokeLayerAnimationFrameTime > this.smokeLayerTimeInfo.timeExtent.endTime){
+                            smokeLayerAnimationFrameTime = this.smokeLayerTimeInfo.timeExtent.startTime;
+                        }
+
+                        // console.log(startTime);
+                    }
+
+                    let timeDiff = Math.abs(smokeLayerAnimationFrameTime - this.smokeLayerTimeInfo.timeExtent.startTime.getTime()) / 3600000;
+
+                    // console.log(timeDiff);
+
+                    this.setMapExtent(smokeLayerAnimationFrameTime);
+
+                    appView.updateSmokeLayerTimeVal(timeDiff);
+
+                }, 1500);
+            }
 
             this.getWildfireLayerRendererByTitle = function(layerTitle){
                 const rendererInfo = JSON.parse(JSON.stringify(this.wildfireClassBreakRendererInfo));
@@ -657,6 +753,7 @@ require([
 
             // cache dom elements
             const $numOfFires = $('.val-holder-num-of-fires');
+            const $smokeLayerTimeVal = $('.val-holder-smoke-layer-time');
             const $fireNameSearchInput = $('.fire-name-search-input');
             const $squareReferenceBox = $('.square-reference-box');
 
@@ -694,7 +791,12 @@ require([
 
             this.updateNumOfFiresVal = function(fires=[]){
                 $numOfFires.text(fires.length);
-            }
+            };
+
+            this.updateSmokeLayerTimeVal = function(val){
+                const txtStr = Number.isInteger(val) ? ` (+${val} hr)` : '';
+                $smokeLayerTimeVal.text(txtStr);
+            };
 
             this.initFireSummaryInfoVisibilityOberver = function(){
                 this.fireSummaryInfoVisibilityOberver = new Observable();
@@ -1045,6 +1147,11 @@ require([
                     } else {
                         appView.fireNameDropdownMenu.hide();
                     }
+                });
+
+                $body.on('click', '.js-toggle-smoke-layer', function(){
+                    $('.smoke-layer-toggle-btn').toggleClass('checked');
+                    wildFireVizApp.toggleSmokeLayer();
                 });
 
             })();

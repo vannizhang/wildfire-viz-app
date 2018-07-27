@@ -60,35 +60,41 @@
                             <div class="block filter-wrap js-affected-area-filter checked text-center font-size--3" data-filter-index='4'>
                                 <span class="legend-icon legend-class-4"></span>
                                 <span class="filter-label"></span>
-                                <span class="fa fa-check-square-o fa-lg" aria-hidden="true"></span>
-                                <span class="fa fa-square-o fa-lg" aria-hidden="true"></span>
+                                <!-- <span class="fa fa-check-square-o fa-lg" aria-hidden="true"></span>
+                                <span class="fa fa-square-o fa-lg" aria-hidden="true"></span> -->
                             </div>
                             <div class="block filter-wrap js-affected-area-filter checked text-center font-size--3" data-filter-index='3'>
                                 <span class="legend-icon legend-class-3"></span>
                                 <span class="filter-label"></span>
-                                <span class="fa fa-check-square-o fa-lg" aria-hidden="true"></span>
-                                <span class="fa fa-square-o fa-lg" aria-hidden="true"></span>
+                                <!-- <span class="fa fa-check-square-o fa-lg" aria-hidden="true"></span>
+                                <span class="fa fa-square-o fa-lg" aria-hidden="true"></span> -->
                             </div>
                             <div class="block filter-wrap js-affected-area-filter checked text-center font-size--3" data-filter-index='2'>
                                 <span class="legend-icon legend-class-2"></span>
                                 <span class="filter-label"></span>
-                                <span class="fa fa-check-square-o fa-lg" aria-hidden="true"></span>
-                                <span class="fa fa-square-o fa-lg" aria-hidden="true"></span>
+                                <!-- <span class="fa fa-check-square-o fa-lg" aria-hidden="true"></span>
+                                <span class="fa fa-square-o fa-lg" aria-hidden="true"></span> -->
                             </div>
                             <div class="block filter-wrap js-affected-area-filter checked text-center font-size--3" data-filter-index='1'>
                                 <span class="legend-icon legend-class-1"></span>
                                 <span class="filter-label"></span>
-                                <span class="fa fa-check-square-o fa-lg" aria-hidden="true"></span>
-                                <span class="fa fa-square-o fa-lg" aria-hidden="true"></span>
+                                <!-- <span class="fa fa-check-square-o fa-lg" aria-hidden="true"></span>
+                                <span class="fa fa-square-o fa-lg" aria-hidden="true"></span> -->
                             </div>
                             <div class="block filter-wrap js-affected-area-filter checked text-center font-size--3" data-filter-index='0'>
                                 <span class="legend-icon legend-class-0"></span>
                                 <span class="filter-label"></span>
-                                <span class="fa fa-check-square-o fa-lg" aria-hidden="true"></span>
-                                <span class="fa fa-square-o fa-lg" aria-hidden="true"></span>
+                                <!-- <span class="fa fa-check-square-o fa-lg" aria-hidden="true"></span>
+                                <span class="fa fa-square-o fa-lg" aria-hidden="true"></span> -->
                             </div>
                         </div>
 
+                    </div>
+
+                    <div class='leader-quarter font-size--3 smoke-layer-toggle-btn js-toggle-smoke-layer'>
+                        <span class="fa fa-check-square-o fa-lg" aria-hidden="true"></span>
+                        <span class="fa fa-square-o fa-lg" aria-hidden="true"></span>
+                        <span class='margin-left-quarter'>Smoke forecast <span class='val-holder-smoke-layer-time'></span></span>
                     </div>
                     
                     <div class='hDivider leader-half'></div>
@@ -99,10 +105,10 @@
                     <div class="trailer-quarter font-size--3">
                         <nav class='breadcrumb-nav inline-block'>
                             <span class="js-toggle-fire-summary-info-container pseudo-divider is-active" data-target-container="wildfire-timeline-container">timeline</span>
-                            <span class="js-toggle-fire-summary-info-container" data-target-container="wildfire-grid-container">grid</span>
+                            <span class="js-toggle-fire-summary-info-container" data-target-container="wildfire-grid-container">magnitude</span>
                         </nav>
 
-                        <span class='right'>total fires: <span class='val-holder-num-of-fires'>0</span></span>
+                        <span class='right'>total fires in view: <span class='val-holder-num-of-fires'>0</span></span>
                     </div>
 
                     <div id='wildfire-grid-container' class="fire-summary-info-container legend-grid block-group block-group-6-up hide">
@@ -175,7 +181,7 @@
         <script src="./js/moment-with-locales.js"></script>
         <script src="./js/calcite-web.min.js"></script> 
         <script src="https://js.arcgis.com/3.21/"></script>
-        <script src="./js/main.f0af17449a83681de22db7ce166.js"></script>
+        <script src="./js/main.js"></script>
 
         <script>
             calcite.init();
