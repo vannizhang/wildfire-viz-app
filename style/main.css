@@ -93,9 +93,9 @@
     align-items: center;
 }
 
-.filter-wrap {
+/* .filter-wrap {
     cursor: pointer;
-}
+} */
 
 .filter-wrap .fa-square-o {
     display: inline-block;
@@ -261,6 +261,16 @@
 .customized-popup-header {
     border-bottom: solid 1px rgba(183, 118, 0, 0.5);
     padding-bottom: .3rem;
+}
+
+.esriPopup  hr {
+    margin: .3rem 0;
+    border: none;
+    border-top: 1px solid rgba(183, 118, 0, 0.5);
+}
+
+.info-window-links a {
+    color : #B77600;
 }
 
 .cursor-pointer {

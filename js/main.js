@@ -442,7 +442,10 @@ require([
                 const stateCode = fireData.attributes[FIELD_NAME_STATE];
                 const stateFullName = stateNamesLookup[stateCode] ? stateNamesLookup[stateCode] : stateCode;
                 const lat = +fireData.attributes[FIELD_NAME_LAT].toFixed(2);
-                const lon = +fireData.attributes[FIELD_NAME_LON].toFixed(2);;
+                const lon = +fireData.attributes[FIELD_NAME_LON].toFixed(2);
+                const fireName = fireData.attributes[FIRE_NAME_FIELD_NAME].toLowerCase() + ' fire';
+                const newsLink = 'https://news.google.com/search?q=' + fireName;
+                const twitterLink = 'https://twitter.com/search?q=' + fireName;
                 const contentHtmlStr = `
                     <div class='customized-popup-header'>
                         <span class='font-size--3'>Start Date: ${fireData.attributes[FIELD_NAME_START_DAT_FORMATTED]}</span>
@@ -455,6 +458,11 @@ require([
                         <p class='font-size--3 trailer-quarter'>
                             ${stateFullName} (${lat}, ${lon})
                         </p>
+                        <hr>
+                        <div class='info-window-links'>
+                            <a href='${newsLink}' target='_blank' class=''>News</a>
+                            <a href='${twitterLink}' target='_blank' class='margin-left-half'>Twitter</a>
+                        </div>
                     <div>
                 `;
                 this.map.infoWindow.setContent(contentHtmlStr);
@@ -470,7 +478,7 @@ require([
             this.zoomToFire = function(fireID=''){
                 const fireData = this.getFireDataByID(fireID);
                 const fireGeom = this.getFeatureGeometryInWgs84(fireData);
-                this.map.centerAndZoom(fireGeom, 9);
+                this.map.centerAndZoom(fireGeom, 12);
             }
 
             this._queryWildfireData = function(params, callback){
@@ -700,9 +708,13 @@ require([
                 });
 
                 map.on('extent-change', (evt)=>{
+                    const zoom = map.getZoom();
                     this.hideInforWindow();
-                    wildfireModel.setExtent(evt.extent);
-                    this.searchWildfire();
+
+                    if(zoom < 13){
+                        wildfireModel.setExtent(evt.extent);
+                        this.searchWildfire();
+                    }
                 }); 
             };
 
@@ -1102,16 +1114,16 @@ require([
                     wildFireVizApp.hideInforWindow();
                 });
 
-                $body.on('click', '.js-affected-area-filter', function(){
-                    const targetFilter = $(this);
-                    targetFilter.toggleClass('checked');
+                // $body.on('click', '.js-affected-area-filter', function(){
+                //     const targetFilter = $(this);
+                //     targetFilter.toggleClass('checked');
         
-                    const targetFilterIndex = +targetFilter.attr('data-filter-index');
-                    const isVisible = targetFilter.hasClass('checked');
+                //     const targetFilterIndex = +targetFilter.attr('data-filter-index');
+                //     const isVisible = targetFilter.hasClass('checked');
         
-                    wildfireModel.setAffectedAreaRendererVisibilityByIndex(targetFilterIndex, isVisible);
-                    wildFireVizApp.searchWildfire();
-                });
+                //     wildfireModel.setAffectedAreaRendererVisibilityByIndex(targetFilterIndex, isVisible);
+                //     wildFireVizApp.searchWildfire();
+                // });
 
                 $body.on('click', '.js-toggle-fire-summary-info-container', function(){
                     const target = $(this);
