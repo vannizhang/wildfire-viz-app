@@ -56,10 +56,11 @@ require([
 
         //////////////////// App Config Data ////////////////////
 
-        // const WEB_MAP_ID = "60f04046d1dc4cf7a8ff66729d872999";
-        const WEB_MAP_ID = 'de31c65a5641422ba9ced5b234ba6e02';
+        const WEB_MAP_ID = "108e2e8b36ef47abb3942b00e8d69128";
+        // const WEB_MAP_ID = 'de31c65a5641422ba9ced5b234ba6e02';
         const WILDFIRE_ACTIVITY_BASE_URL = "https://utility.arcgis.com/usrsvcs/servers/141efcbd82fd4c129f5b784c2bc85229/rest/services/LiveFeeds/Wildfire_Activity/MapServer";
         const REQUEST_URL_WILDFIRE_ACTIVITY = WILDFIRE_ACTIVITY_BASE_URL + "/0/query";
+        const REQUEST_URL_WILDFIRE_PERIMETER = WILDFIRE_ACTIVITY_BASE_URL + "/2/query";
         const REQUEST_URL_WILDFIRE_GENERATE_RENDERER = WILDFIRE_ACTIVITY_BASE_URL + "/dynamicLayer/generateRenderer";
 
         const LAYER_NAME_ACTIVE_FIRE = 'Active_Fire_Report';
@@ -75,6 +76,7 @@ require([
         const FIELD_NAME_LAT = 'LATITUDE';
         const FIELD_NAME_LON = 'LONGITUDE';
         const FIELD_NAME_INTERNAL_ID = 'INTERNALID';
+        const FIELD_NAME_FIRE_PERIMETER_LOAD_DATE = 'LOAD_DATE';
 
         // dom elements data
         const WILDFIRE_GRID_CONTAINER_ID = 'wildfire-grid-container';
@@ -289,6 +291,7 @@ require([
             this.operationalLayers = []; // layers related to wildfire activities
             this.allWildfires = []; 
             this.allWildfiresLookupTable = {}; // a lookup table of all wildfires data by name
+            this.allWildfiresPerimeterLookupTable = {}; // a lookup table of all wildfires perimeters data by name
             this.wildfireClassBreakRendererInfo = null;
             this.smokeLayerTimeInfo = null;
 
@@ -331,6 +334,18 @@ require([
                 this.allWildfiresLookupTable = lookupTable;
             };
 
+            this.setAllWildfiresPerimeterLookupTable = function(data){
+                data.forEach(d=>{
+                    const key = d.attributes.FIRE_NAME.toLowerCase();
+                    this.allWildfiresPerimeterLookupTable[key] = d.attributes;
+                });
+            };
+
+            this.getFirePerimeterDataByName = function(name){
+                name = name.toLowerCase();
+                return this.allWildfiresPerimeterLookupTable[name];
+            };
+
             this.getFireDataByID = function(id){
                 return this.allWildfiresLookupTable[id];
             };
@@ -365,11 +380,18 @@ require([
             // load and render all wildfire once map and operational layers are ready
             this.mapOnReadyHandler = function(){
                 const queryParams = wildfireModel.getQueryParams(true);
-                this._queryWildfireData(queryParams, fullListOfWildfires=>{
+
+                this._queryWildfireData(REQUEST_URL_WILDFIRE_ACTIVITY, queryParams, fullListOfWildfires=>{
                     // console.log('fullListOfWildfires', fullListOfWildfires);
                     this.setAllWildfires(fullListOfWildfires);
                     this.zoomToExtentOfAllFires();
                 });
+
+                this._queryWildfireData(REQUEST_URL_WILDFIRE_PERIMETER, {f: 'json', where: '1=1', outFields: '*', returnGeometry: false}, fullListOfWildfirePerimeters=>{
+                    // console.log('fullListOfWildfirePerimeters', fullListOfWildfirePerimeters);
+                    this.setAllWildfiresPerimeterLookupTable(fullListOfWildfirePerimeters);
+                });
+
             };
 
             this.searchWildfire = function(options={}, onSuccessHandler){
@@ -384,7 +406,7 @@ require([
                 
                 onSuccessHandler = onSuccessHandler || defaultOnSuccessHandler;
 
-                this._queryWildfireData(queryParams, onSuccessHandler);
+                this._queryWildfireData(REQUEST_URL_WILDFIRE_ACTIVITY, queryParams, onSuccessHandler);
             };
 
             this.sortFiresByFieldName = function(fires, fieldName){
@@ -446,6 +468,11 @@ require([
                 const fireName = fireData.attributes[FIRE_NAME_FIELD_NAME].toLowerCase() + ' fire';
                 const newsLink = 'https://news.google.com/search?q=' + fireName;
                 const twitterLink = 'https://twitter.com/search?q=' + fireName;
+
+                const firePerimeterData = this.getFirePerimeterDataByName(fireData.attributes[FIRE_NAME_FIELD_NAME]);
+                const firePerimeterUpdateTime = firePerimeterData ? firePerimeterData[FIELD_NAME_FIRE_PERIMETER_LOAD_DATE] : null;
+                const dateDiffStr = firePerimeterUpdateTime ? getFormattedDateDiffStr(firePerimeterUpdateTime) : null;
+
                 const contentHtmlStr = `
                     <div class='customized-popup-header'>
                         <span class='font-size--3'>Start Date: ${fireData.attributes[FIELD_NAME_START_DAT_FORMATTED]}</span>
@@ -455,6 +482,7 @@ require([
                         <p class='trailer-quarter'> 
                             The ${fireData.attributes[FIRE_NAME_FIELD_NAME]} fire is estimated to be ${numberWithCommas(fireData.attributes[AFFECTED_AREA_FIELD_NAME])} acres and <strong>${fireData.attributes[PCT_CONTAINED_FIELD_NAME]}%</strong> contained.
                         </p>
+                        ${dateDiffStr ? '<p class="trailer-quarter">Fire perimeter updated ' + dateDiffStr + ' ago.</p>' : ''}
                         <p class='font-size--3 trailer-quarter'>
                             ${stateFullName} (${lat}, ${lon})
                         </p>
@@ -481,9 +509,9 @@ require([
                 this.map.centerAndZoom(fireGeom, 12);
             }
 
-            this._queryWildfireData = function(params, callback){
+            this._queryWildfireData = function(url, params, callback){
                 let wildfireDataRequest = esriRequest({
-                    url: REQUEST_URL_WILDFIRE_ACTIVITY,
+                    url: url,
                     content: params,
                     handleAs: "json",
                     callbackParamName: "callback"
@@ -1210,11 +1238,29 @@ require([
                 d = c < 0 ? c : Math.abs(c), // enforce -0 is 0
                 e = d + ['', 'K', 'M', 'B', 'T'][k]; // append power
             return e;
-        }
+        };
 
         const numberWithCommas = (x) => {
             return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-        }
+        };
+
+        const getFormattedDateDiffStr = (datetime)=>{
+            const hours = dateDiffInHours(datetime);
+            let dateDiff = '';
+            if(hours < 24){
+                dateDiff = hours.toFixed(0) + ' hours';
+            } else {
+                dateDiff = Math.floor(hours/24) + ' days';
+            }
+            return dateDiff;
+        };
+
+        const dateDiffInHours = (date)=>{
+            date = new Date(date).getTime();
+            const now = new Date().getTime();
+            const hours = Math.abs(date - now) / 36e5;
+            return hours;
+        };
 
         function capitalizeFirstLetter(strings) {
             return strings.split(' ').map(s=>{
