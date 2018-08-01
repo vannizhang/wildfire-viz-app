@@ -6,6 +6,7 @@ require([
     "esri/IdentityManager",
     "esri/geometry/Point",
     "esri/geometry/Multipoint",
+    "esri/geometry/Extent",
     "esri/SpatialReference",
     "esri/geometry/screenUtils",
 
@@ -32,6 +33,7 @@ require([
     esriId,
     Point,
     Multipoint,
+    Extent,
     SpatialReference,
     screenUtils,
 
@@ -303,7 +305,9 @@ require([
             this.startUp = function(){
                 // get the class break info that will be used to render the wildfire activity layer
                 this.generateClassBreakRendererInfo(AFFECTED_AREA_FIELD_NAME, (response)=>{
-                    this.setWildfireClassBreakRendererInfo(response);
+                    if(!response.error){
+                        this.setWildfireClassBreakRendererInfo(response);
+                    }
                     this._initWebMapByID(WEB_MAP_ID);
                 });
             };
@@ -380,11 +384,18 @@ require([
             // load and render all wildfire once map and operational layers are ready
             this.mapOnReadyHandler = function(){
                 const queryParams = wildfireModel.getQueryParams(true);
+                const hashData = parseHash();
 
                 this._queryWildfireData(REQUEST_URL_WILDFIRE_ACTIVITY, queryParams, fullListOfWildfires=>{
                     // console.log('fullListOfWildfires', fullListOfWildfires);
                     this.setAllWildfires(fullListOfWildfires);
-                    this.zoomToExtentOfAllFires();
+
+                    if(hashData.ext){
+                        this.zoomToExtFromHash(hashData.ext);
+                    } else {
+                        this.zoomToExtentOfAllFires();
+                    }
+                    
                 });
 
                 this._queryWildfireData(REQUEST_URL_WILDFIRE_PERIMETER, {f: 'json', where: '1=1', outFields: '*', returnGeometry: false}, fullListOfWildfirePerimeters=>{
@@ -394,17 +405,20 @@ require([
 
             };
 
-            this.searchWildfire = function(options={}, onSuccessHandler){
+            this.searchWildfire = function(shouldNotUpdateFireLayer){
                 const queryParams = wildfireModel.getQueryParams(); // this._getQueryParams(whereClause, extentJSON);
 
-                const defaultOnSuccessHandler = (res)=>{
+                const onSuccessHandler = (res)=>{
                     const sortedFires = this.sortFiresByFieldName(res, AFFECTED_AREA_FIELD_NAME);
                     appView.populateWildfires(sortedFires);
                     // this.updateFirePerimeterLayer(sortedFires);
-                    this._setLayerDefinitionsForWildfireLayer(queryParams.where, sortedFires);
+
+                    if(!shouldNotUpdateFireLayer){
+                        this._setLayerDefinitionsForWildfireLayer(queryParams.where, sortedFires);
+                    }
                 }
                 
-                onSuccessHandler = onSuccessHandler || defaultOnSuccessHandler;
+                // onSuccessHandler = onSuccessHandler || defaultOnSuccessHandler;
 
                 this._queryWildfireData(REQUEST_URL_WILDFIRE_ACTIVITY, queryParams, onSuccessHandler);
             };
@@ -468,6 +482,7 @@ require([
                 const fireName = fireData.attributes[FIRE_NAME_FIELD_NAME].toLowerCase() + ' fire';
                 const newsLink = 'https://news.google.com/search?q=' + fireName;
                 const twitterLink = 'https://twitter.com/search?q=' + fireName;
+                const facebookLink = 'https://www.facebook.com/search/top/?q=' + fireName;
 
                 const firePerimeterData = this.getFirePerimeterDataByName(fireData.attributes[FIRE_NAME_FIELD_NAME]);
                 const firePerimeterUpdateTime = firePerimeterData ? firePerimeterData[FIELD_NAME_FIRE_PERIMETER_LOAD_DATE] : null;
@@ -480,16 +495,14 @@ require([
                     </div>
                     <div class='leader-quarter trailer-quarter'>
                         <p class='trailer-quarter'> 
-                            The ${fireData.attributes[FIRE_NAME_FIELD_NAME]} fire is estimated to be ${numberWithCommas(fireData.attributes[AFFECTED_AREA_FIELD_NAME])} acres and <strong>${fireData.attributes[PCT_CONTAINED_FIELD_NAME]}%</strong> contained.
+                            The ${fireData.attributes[FIRE_NAME_FIELD_NAME]} fire in ${stateFullName} is estimated to be ${numberWithCommas(fireData.attributes[AFFECTED_AREA_FIELD_NAME])} acres and <strong>${fireData.attributes[PCT_CONTAINED_FIELD_NAME]}%</strong> contained.
                         </p>
-                        ${dateDiffStr ? '<p class="trailer-quarter">Fire perimeter updated ' + dateDiffStr + ' ago.</p>' : ''}
-                        <p class='font-size--3 trailer-quarter'>
-                            ${stateFullName} (${lat}, ${lon})
-                        </p>
+                        ${dateDiffStr ? '<p class="trailer-quarter avenir-italic font-size--4">Perimeter updated ' + dateDiffStr + ' ago.</p>' : ''}
                         <hr>
                         <div class='info-window-links'>
                             <a href='${newsLink}' target='_blank' class=''>News</a>
                             <a href='${twitterLink}' target='_blank' class='margin-left-half'>Twitter</a>
+                            <a href='${facebookLink}' target='_blank' class='margin-left-half'>Facebook</a>
                         </div>
                     <div>
                 `;
@@ -581,7 +594,7 @@ require([
                 container.css('filter', 'invert(100%) blur(5px) saturate(.4)');
             };
 
-            this.setMapExtent = function(startTime, endTime){
+            this.setMapTimeExtent = function(startTime, endTime){
 
                 startTime = startTime ? new Date(startTime) : this.smokeLayerTimeInfo.timeExtent.startTime;
                 endTime = endTime ? new Date(endTime) : startTime;
@@ -638,7 +651,7 @@ require([
 
                     // console.log(timeDiff);
 
-                    this.setMapExtent(smokeLayerAnimationFrameTime);
+                    this.setMapTimeExtent(smokeLayerAnimationFrameTime);
 
                     appView.updateSmokeLayerTimeVal(timeDiff);
 
@@ -646,16 +659,23 @@ require([
             }
 
             this.getWildfireLayerRendererByTitle = function(layerTitle){
-                const rendererInfo = JSON.parse(JSON.stringify(this.wildfireClassBreakRendererInfo));
-                const symbolsInfo = (layerTitle === LAYER_NAME_ACTIVE_FIRE) ? wildfireLayerSymbolsLookup['default'] : wildfireLayerSymbolsLookup['background'];
-                
-                rendererInfo.classBreakInfos = rendererInfo.classBreakInfos.map(function(info, index){
-                    const symbol = new PictureMarkerSymbol(symbolsInfo[index]);
-                    info.symbol = symbol.toJson();
-                    return info;
-                });
+                let outputRenderer = null;
 
-                return new ClassBreaksRenderer(rendererInfo);
+                if(this.wildfireClassBreakRendererInfo){
+
+                    const rendererInfo = JSON.parse(JSON.stringify(this.wildfireClassBreakRendererInfo));
+                    const symbolsInfo = (layerTitle === LAYER_NAME_ACTIVE_FIRE) ? wildfireLayerSymbolsLookup['default'] : wildfireLayerSymbolsLookup['background'];
+                    
+                    rendererInfo.classBreakInfos = rendererInfo.classBreakInfos.map(function(info, index){
+                        const symbol = new PictureMarkerSymbol(symbolsInfo[index]);
+                        info.symbol = symbol.toJson();
+                        return info;
+                    });
+
+                    outputRenderer = new ClassBreaksRenderer(rendererInfo)
+                }
+
+                return outputRenderer;
             };
 
             this.getRendererForFirePerimeter = ()=>{
@@ -689,6 +709,19 @@ require([
                 const layerDrawingOption = new LayerDrawingOptions();
                 layerDrawingOption.renderer = (layerID === 0) ? this.getWildfireLayerRendererByTitle(layerTitle) : this.getRendererForFirePerimeter();
                 return layerDrawingOption;
+            };
+
+            this.zoomToExtFromHash = function(extStr){
+                let extData = extStr.split(',');
+                let extent = new Extent({
+                    "xmin": +extData[0],
+                    "ymin": +extData[1],
+                    "xmax": +extData[2],
+                    "ymax": +extData[3],
+                    "spatialReference":{"wkid":102100}
+                });
+                // console.log(extent);
+                this.map.setExtent(extent);
             };
 
             this.zoomToExtentOfAllFires = function(){
@@ -736,14 +769,21 @@ require([
                 });
 
                 map.on('extent-change', (evt)=>{
-                    const zoom = map.getZoom();
+                    const shouldNotUpdateFireLayer = map.getZoom() >= 12 ? true : false;
+
                     this.hideInforWindow();
 
-                    if(zoom < 13){
-                        wildfireModel.setExtent(evt.extent);
-                        this.searchWildfire();
-                    }
+                    wildfireModel.setExtent(evt.extent);
+                    this.searchWildfire(shouldNotUpdateFireLayer);
+
+                    this.addMapExtToHash(map);
                 }); 
+            };
+
+            this.addMapExtToHash = function(map){
+                const ext = map.extent;
+                const hashVal = `${ext.xmin},${ext.ymin},${ext.xmax},${ext.ymax}`;
+                updateHash('ext', hashVal);
             };
 
             this.generateClassBreakRendererInfo = function(classificationField, callback){
@@ -777,6 +817,7 @@ require([
         
                 function requestErrorHandler(error) {
                     console.log("Error: ", error.message);
+                    callback({error: error.message});
                 }
         
                 request.then(requestSuccessHandler, requestErrorHandler);
@@ -801,6 +842,7 @@ require([
             const $smokeLayerTimeVal = $('.val-holder-smoke-layer-time');
             const $fireNameSearchInput = $('.fire-name-search-input');
             const $squareReferenceBox = $('.square-reference-box');
+            const $shareMapViewUrlInput = $('.share-map-view-url-input');
 
             // app view components
             this.wildfireGrids = null;
@@ -874,6 +916,10 @@ require([
                     // console.log(screenPos);
                 }
             };
+
+            this.setShareMapViewUrlInputVal = (val)=>{
+                $shareMapViewUrlInput.val(val);
+            }
 
             const WildfiresTimeline = function(containerID){
 
@@ -1199,6 +1245,12 @@ require([
                     wildFireVizApp.toggleSmokeLayer();
                 });
 
+                $body.on('click', '.js-copy-share-map-view-url', function(){
+                    const copyText = document.getElementById("shareViewInput");
+                    copyText.select();
+                    document.execCommand("copy");
+                });
+
             })();
 
             this.init();
@@ -1267,6 +1319,26 @@ require([
                 s = s.toLowerCase();
                 return s.charAt(0).toUpperCase() + s.slice(1);
             }).join(' ');
+        }
+
+        function updateHash(key, val){
+            const hash = '#' + key + '=' + val;
+            const href = window.location.href.split('#')[0];
+            // window.location.hash = key + '=' + val;
+            appView.setShareMapViewUrlInputVal(href + hash);
+        }
+
+        function parseHash(){
+            let hashStr = window.location.hash ? window.location.hash.substr(1) : null;
+            let hashData = hashStr ? hashStr.split('&') : [];
+            let outputHashData = {};
+            hashData.forEach(d=>{
+                d = d.split('=');
+                const key = d[0];
+                const val = d[1];
+                outputHashData[key] = val;
+            })
+            return outputHashData;
         }
 
     });
