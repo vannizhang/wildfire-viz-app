@@ -1225,8 +1225,6 @@ require([
                     const currentText = $(this).val();
                     const matchedNames = wildFireVizApp.getMatchedFireNames(currentText);
 
-                    console.log(matchedNames);
-
                     appView.fireNameDropdownMenu.populate(matchedNames);
 
                     if(currentText){
