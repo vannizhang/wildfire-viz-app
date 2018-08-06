@@ -840,7 +840,7 @@ require([
             // cache dom elements
             const $numOfFires = $('.val-holder-num-of-fires');
             const $smokeLayerTimeVal = $('.val-holder-smoke-layer-time');
-            const $fireNameSearchInput = $('.fire-name-search-input');
+            const $fireNameSearchInput = $('#fireQueryInput');
             const $squareReferenceBox = $('.square-reference-box');
             const $shareMapViewUrlInput = $('.share-map-view-url-input');
 
@@ -1104,7 +1104,7 @@ require([
                 };
 
                 this.setSelectedItem = (fireName='')=>{
-                    parentContainer.find('.fire-name-search-input').val(fireName);
+                    $fireNameSearchInput.val(fireName);
                     const isFilled = fireName ? true : false;
                     this.toggleIsSearchInputFilled(isFilled);
                     this.hide();
@@ -1224,6 +1224,8 @@ require([
                 $fireNameSearchInput.on('keyup', function(){
                     const currentText = $(this).val();
                     const matchedNames = wildFireVizApp.getMatchedFireNames(currentText);
+
+                    console.log(matchedNames);
 
                     appView.fireNameDropdownMenu.populate(matchedNames);
 
