@@ -58,9 +58,10 @@ require([
 
         //////////////////// App Config Data ////////////////////
 
-        const WEB_MAP_ID = "108e2e8b36ef47abb3942b00e8d69128";
-        // const WEB_MAP_ID = 'de31c65a5641422ba9ced5b234ba6e02';
-        const WILDFIRE_ACTIVITY_BASE_URL = "https://utility.arcgis.com/usrsvcs/servers/141efcbd82fd4c129f5b784c2bc85229/rest/services/LiveFeeds/Wildfire_Activity/MapServer";
+        // const WEB_MAP_ID = "108e2e8b36ef47abb3942b00e8d69128";
+        const WEB_MAP_ID = '046c37a9cca94289a07edd67b2af445b';
+        // const WILDFIRE_ACTIVITY_BASE_URL = "https://utility.arcgis.com/usrsvcs/servers/141efcbd82fd4c129f5b784c2bc85229/rest/services/LiveFeeds/Wildfire_Activity/MapServer";
+        const WILDFIRE_ACTIVITY_BASE_URL = "https://utility.arcgis.com/usrsvcs/servers/fc88a2aa759f4ac28e63d2f58b2815cc/rest/services/LiveFeeds/Wildfire_Activity/MapServer";
         const REQUEST_URL_WILDFIRE_ACTIVITY = WILDFIRE_ACTIVITY_BASE_URL + "/0/query";
         const REQUEST_URL_WILDFIRE_PERIMETER = WILDFIRE_ACTIVITY_BASE_URL + "/2/query";
         const REQUEST_URL_WILDFIRE_GENERATE_RENDERER = WILDFIRE_ACTIVITY_BASE_URL + "/dynamicLayer/generateRenderer";
