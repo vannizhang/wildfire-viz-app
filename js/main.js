@@ -410,12 +410,17 @@ require([
                 const queryParams = wildfireModel.getQueryParams(); // this._getQueryParams(whereClause, extentJSON);
 
                 const onSuccessHandler = (res)=>{
-                    const sortedFires = this.sortFiresByFieldName(res, AFFECTED_AREA_FIELD_NAME);
-                    appView.populateWildfires(sortedFires);
+                    let firesDataToPopulate = this.sortFiresByFieldName(res, AFFECTED_AREA_FIELD_NAME);
+
+                    firesDataToPopulate = firesDataToPopulate.filter(d=>{
+                        return d.attributes[FIELD_NAME_START_DATE] !== null;
+                    });
+
+                    appView.populateWildfires(firesDataToPopulate);
                     // this.updateFirePerimeterLayer(sortedFires);
 
                     if(!shouldNotUpdateFireLayer){
-                        this._setLayerDefinitionsForWildfireLayer(queryParams.where, sortedFires);
+                        this._setLayerDefinitionsForWildfireLayer(queryParams.where, firesDataToPopulate);
                     }
                 }
                 
