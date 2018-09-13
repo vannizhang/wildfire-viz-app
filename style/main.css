@@ -232,6 +232,10 @@
     display: inline-block;
 }
 
+.esriPopup .sizer { 
+    width: 300px;
+}
+
 .esriPopup .contentPane {
     background-color: rgba(26, 0, 17, 0.75);
     color: #B77600;
