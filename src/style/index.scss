@@ -2,3 +2,19 @@
 
 /* load esri styles for version 4.10 via import in main scss file */
 @import url('https://js.arcgis.com/4.10/esri/css/main.css');
+
+.side-bar {
+    position: absolute;
+    top: 0;
+    right: 0;
+    // width: 450px;
+    height: 100%;
+    z-index: 100;
+    background-color: rgba(26, 0, 17, 0.8);
+    overflow: auto;
+    color: #B77600;
+
+    .content-wrap {
+        padding: 1rem;
+    }
+}
