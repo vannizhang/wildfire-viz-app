@@ -56,8 +56,6 @@ class TimeLine extends React.Component {
             return firesByDate[d];
         });
 
-        console.log(firesByDate)
-
         return fires;
     };
 
