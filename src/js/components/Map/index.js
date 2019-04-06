@@ -5,13 +5,14 @@ import FireflySymbols from './FireflySymbolsLookup';
 
 const CONTAINER_ID = 'mapViewDiv';
 const WEB_MAP_ID = 'ba6c28836375471d8d6233d521f5ef26';
+const LAYER_ID_ACTIVE_FIRES = 'activeFires';
 
 class Map extends React.Component {
 
     constructor(props){
         super(props);
 
-        console.log('props of Map Component', props);
+        // console.log('props of Map Component', props);
 
         this.mapView = null;
         this.activeFiresLayer = null;
@@ -46,6 +47,7 @@ class Map extends React.Component {
 
             this.mapView.when(()=>{
                 this.mapViewOnReadyHandler();
+                this.initMapExtentOnChangeHandler();
             }).catch((err)=>{
                 console.error(err)
             });
@@ -75,6 +77,30 @@ class Map extends React.Component {
     mapViewOnReadyHandler(){
         // console.log('mapview is ready...');
         this.showFires();
+    };
+
+    initMapExtentOnChangeHandler(){
+
+        loadModules([
+            "esri/core/watchUtils"
+        ]).then(([
+            watchUtils
+        ])=>{
+            const view = this.mapView;
+            
+            watchUtils.whenTrue(view, "stationary", ()=>{
+
+                if(view.extent && this.props.onExtentChange) {
+                    // console.log('new map ext', view.extent.toJSON());
+                    this.props.onExtentChange({
+                        extent: view.extent.toJSON(),
+                        zoom: view.zoom
+                    });
+                }
+            });
+        }).catch(err=>{
+            console.error(err);
+        })
     }
 
     showFires(){
@@ -123,7 +149,7 @@ class Map extends React.Component {
 
             // if props.selectFireName is empty, show the feature
             // otherwise, only show feature when it's name matches the props.selectFireName
-            const isMatchSelectName = !this.props.selectFireName || this.props.selectFireName === graphic.attributes.FIRE_NAME ? true : false;
+            const isMatchSelectName = !this.props.selectedFireName || this.props.selectedFireName === graphic.attributes.FIRE_NAME ? true : false;
 
             const isVisible = isMatchSelectName;
 
@@ -137,13 +163,12 @@ class Map extends React.Component {
         this.initMap();
     };
 
-    // // // no need to rerender the map after data update
-    // shouldComponentUpdate(nextProps){
-    //     return false;
-    // }
-
-    componentDidUpdate(){
-        this.filterActiveFires();
+    componentDidUpdate(prevProps){
+        // console.log(prevProps, this.props);
+        
+        if(prevProps.selectedFireName !== this.props.selectedFireName){
+            this.filterActiveFires();
+        }
     }
 
     componentDidCatch(error, info) {

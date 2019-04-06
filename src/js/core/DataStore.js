@@ -14,6 +14,11 @@ const FIELD_NAME = {
 
 const DataStore = function(options={}){
 
+    const state = {
+        activeFires: [],
+        // acriveFiresIndex
+    }
+
     const init = async()=>{
 
         const where = `${FIELD_NAME.pctContained} < 100 AND ${FIELD_NAME.area} > 0`;
@@ -23,18 +28,36 @@ const DataStore = function(options={}){
             where 
         });
 
-        const activeFires = await getActiveFires({ where });
+        let activeFires = await queryActiveFires({ where });
 
-        // const perimeterForActiveFires = await getPeremeterForActiveFires({ where });
-        // console.log('fires', formatAcitveFiresData(activeFires.features, classBreakRendererInfo.classBreakInfos));
-        // console.log('classBreakRendererInfo', classBreakRendererInfo);
+        activeFires = formatAcitveFiresData(activeFires.features, classBreakRendererInfo.classBreakInfos);
+
+        setActiveFires(activeFires);
 
         return {
-            activeFires: formatAcitveFiresData(activeFires.features, classBreakRendererInfo.classBreakInfos),
+            activeFires,
             classBreakInfos: classBreakRendererInfo.classBreakInfos
         };
 
     };
+
+    const setActiveFires = (data=[])=>{
+        state.activeFires = data;
+    };
+
+    const getActiveFiresInMapExtent = (mapExtent=null)=>{
+        if(mapExtent){
+            const activeFiresInMapExt = state.activeFires.filter(d=>{
+                const x = d.geometry.x;
+                const y = d.geometry.y;
+                const isInMapExt = x >= mapExtent.xmin && x <= mapExtent.xmax && y >= mapExtent.ymin && y <= mapExtent.ymax ? true : false;
+                return isInMapExt;
+            });
+            return activeFiresInMapExt;
+        }
+
+        return state.activeFires;
+    }
 
     const formatAcitveFiresData = (features=[], classBreakInfo)=>{
 
@@ -51,18 +74,27 @@ const DataStore = function(options={}){
         });
     };
 
-    const getActiveFires = (options={
-        where: '1=1'
-    })=>{
+    const queryActiveFires = ({
+        where = `${FIELD_NAME.pctContained} < 100 AND ${FIELD_NAME.area} > 0`,
+        extentGeometry = null
+    }={})=>{
+
+        const params = {
+            where,
+            outFields: '*',
+            f: 'json'
+        };
+
+        if(extentGeometry){
+            params.geometry = JSON.stringify(extentGeometry);
+            params.geometryType = 'esriGeometryEnvelope';
+            params.spatialRel = 'esriSpatialRelIntersects';
+        }
 
         return new Promise((resolve, reject)=>{
 
-            axios.get(URL_QUERY_WILDFIRE_ACTIVITY, {
-                params: {
-                    where: options.where,
-                    outFields: '*',
-                    f: 'json'
-                }
+            axios.get(URL_QUERY_WILDFIRE_ACTIVITY, { 
+                params 
             })
             .then(function (response) {
                 const responseData = response.data;
@@ -79,36 +111,6 @@ const DataStore = function(options={}){
         });
 
     };
-
-    // const getPeremeterForActiveFires = (options={
-    //     where: '1=1'
-    // })=>{
-
-    //     return new Promise((resolve, reject)=>{
-
-    //         axios.get(URL_QUERY_WILDFIRE_PERIMETER, {
-    //             params: {
-    //                 where: options.where,
-    //                 outFields: '*',
-    //                 f: 'json'
-    //             }
-    //         })
-    //         .then(function (response) {
-    //             console.log(response.data);
-
-    //             if(response && response.data && !response.data.error){
-    //                 resolve(response.data);
-    //             } else {
-    //                 reject([]);
-    //             }
-    //         })
-    //         .catch(function (error) {
-    //             reject(error);
-    //         });
-
-    //     });
-
-    // };
 
     const getClassBreakRendererInfo = (options={
         where: '1=1',
@@ -153,7 +155,8 @@ const DataStore = function(options={}){
     };
 
     return {
-        init
+        init,
+        getActiveFiresInMapExtent
     };
 };
 

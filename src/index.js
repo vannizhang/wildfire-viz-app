@@ -17,6 +17,7 @@ import App from './js/components/App/index';
 
         ReactDOM.render(
             <App 
+                dataStore={dataStore}
                 activeFires={appData.activeFires}
             />, 
             document.getElementById('appRootDiv')
