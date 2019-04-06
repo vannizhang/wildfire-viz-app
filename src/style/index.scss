@@ -18,3 +18,31 @@
         padding: 1rem;
     }
 }
+
+.legend-icon {
+    position: relative;
+    display: inline-block;
+    height: 45px;
+    width: 45px;
+    background: url("../assets/img/FireSymbol.png") no-repeat center; 
+}
+
+.legend-icon.legend-class-4 {
+    background-size: 100%;
+}
+
+.legend-icon.legend-class-3 {
+    background-size: 80%;
+}
+
+.legend-icon.legend-class-2 {
+    background-size: 60%;
+}
+
+.legend-icon.legend-class-1 {
+    background-size: 40%;
+}
+
+.legend-icon.legend-class-0 {
+    background-size: 20%;
+}

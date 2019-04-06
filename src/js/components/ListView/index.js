@@ -1,5 +1,7 @@
 import React from 'react';
 
+import TimeLine from '../TimeLine'
+
 class ListView extends React.Component {
 
     constructor(props){
@@ -20,7 +22,9 @@ class ListView extends React.Component {
                 <div>filters</div>
                 <div>total fires in view: {this.props.data.length}</div>
                 <div className={'modifier-class'}>
-                    This is list view
+                    <TimeLine 
+                        data={this.props.data}
+                    />
                 </div>
             </div>
         );

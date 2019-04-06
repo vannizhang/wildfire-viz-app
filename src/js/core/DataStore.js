@@ -1,5 +1,7 @@
 import axios from "axios";
 
+import config from './config';
+
 const Promise = require('es6-promise').Promise;
 
 const WILDFIRE_ACTIVITY_BASE_URL = "https://utility.arcgis.com/usrsvcs/servers/fc88a2aa759f4ac28e63d2f58b2815cc/rest/services/LiveFeeds/Wildfire_Activity/MapServer";
@@ -8,8 +10,10 @@ const URL_QUERY_WILDFIRE_PERIMETER = WILDFIRE_ACTIVITY_BASE_URL + "/2/query";
 const REQUEST_URL_WILDFIRE_GENERATE_RENDERER = WILDFIRE_ACTIVITY_BASE_URL + "/dynamicLayer/generateRenderer";
 
 const FIELD_NAME = {
-    area: 'AREA_',
-    pctContained: 'PER_CONT'
+    area: config.fields.area,
+    pctContained: config.fields.pct_contained,
+    startDate: config.fields.start_date,
+    reportDate: config.fields.report_date
 };
 
 const DataStore = function(options={}){
@@ -61,7 +65,14 @@ const DataStore = function(options={}){
 
     const formatAcitveFiresData = (features=[], classBreakInfo)=>{
 
-        return features.map(feature=>{
+        const activeFires = [];
+
+        features.forEach(feature=>{
+
+            // some features have missing start date, if so, use report date instead
+            if(!feature.attributes[FIELD_NAME.startDate]){
+                feature.attributes[FIELD_NAME.startDate] = feature.attributes[FIELD_NAME.reportDate];
+            }
 
             for(let i = 0, len = classBreakInfo.length; i < len; i++){
                 if(feature.attributes[FIELD_NAME.area] <= classBreakInfo[i].classMaxValue){
@@ -70,8 +81,14 @@ const DataStore = function(options={}){
                 }
             }
 
-            return feature;
+            // only push feature with valid start date into the final data list
+            if(feature.attributes[FIELD_NAME.startDate]){
+                activeFires.push(feature);
+            }
+            
         });
+
+        return activeFires;
     };
 
     const queryActiveFires = ({
