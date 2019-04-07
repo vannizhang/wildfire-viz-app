@@ -2,6 +2,7 @@ import React from 'react';
 
 import Map from '../Map';
 import ListView from '../ListView';
+import Legend from '../Legend';
 
 const SIDE_BAR_WIDTH = 450;
 
@@ -61,6 +62,15 @@ class App extends React.Component {
                 
                 <div className='side-bar' style={{width: SIDE_BAR_WIDTH}}>
                     <div className='content-wrap'>
+                        
+                        <div className='font-size--3 leader-half trailer-0'>
+                            <span className='fire-filters-title'>Active wildfires by affected area (in acres)</span>
+                            <span className='icon-ui-description margin-left-half font-size-0 cursor-pointer right'></span>
+                        </div>
+
+                        <Legend 
+                            data={this.props.classBreakInfos}
+                        />
                         <ListView 
                             data={this.state.listViewData}
                         />

@@ -19,6 +19,7 @@ import App from './js/components/App/index';
             <App 
                 dataStore={dataStore}
                 activeFires={appData.activeFires}
+                classBreakInfos={appData.classBreakInfos}
             />, 
             document.getElementById('appRootDiv')
         );

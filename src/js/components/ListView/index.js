@@ -42,7 +42,7 @@ class ListView extends React.Component {
 
         return(
             <div id='listViewDiv'>
-                <div className="trailer-quarter font-size--3">
+                <div className="leader-half padding-leader-half trailer-quarter font-size--3" style={{borderTop: 'solid 1px #670043'}}>
 
                     <TabBtn 
                         data={tabData}
