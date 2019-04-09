@@ -1,6 +1,7 @@
 import React from 'react';
 import {loadModules} from 'esri-loader';
 
+import InfoWindow from '../InfoWindow';
 import FireflySymbols from './FireflySymbolsLookup';
 
 const CONTAINER_ID = 'mapViewDiv';
@@ -13,6 +14,13 @@ class Map extends React.Component {
         super(props);
 
         // console.log('props of Map Component', props);
+
+        this.state = {
+            infoWindowPostion: {
+                x: 0,
+                y: 0
+            }
+        }
 
         this.mapView = null;
         this.activeFiresLayer = null;
@@ -169,21 +177,61 @@ class Map extends React.Component {
         if(prevProps.selectedFireName !== this.props.selectedFireName){
             this.filterActiveFires();
         }
+
+        if(prevProps.infoWindowData !== this.props.infoWindowData){
+            this.updateInfoWindowPosition();
+        }
     }
 
     componentDidCatch(error, info) {
         console.error(error, info);
     }
 
+    updateInfoWindowPosition(){
+        let x = 0;
+        let y = 0;
+
+        if(this.props.infoWindowData){
+            // console.log(this.props.infoWindowData.geometry);
+
+            const point = {
+                x: this.props.infoWindowData.geometry.x,
+                y: this.props.infoWindowData.geometry.y,
+                spatialReference: {
+                    wkid: 102100
+                }
+            }
+
+            const screenPoint = this.mapView.toScreen(point);
+            // console.log(screenPoint);
+
+            x = screenPoint.x || 0;
+            y = screenPoint.y || 0;
+        }
+
+        this.setState({
+            infoWindowPostion: { x, y }
+        });
+
+    }
+
     render(){
         return(
-            <div id={CONTAINER_ID} style={{
-                position: 'absolute',
-                top: 0,
-                bottom: 0,
-                left: 0,
-                right: 0
-            }}></div>
+            <div>
+                <div id={CONTAINER_ID} style={{
+                    position: 'absolute',
+                    top: 0,
+                    bottom: 0,
+                    left: 0,
+                    right: 0
+                }}></div>
+                <InfoWindow 
+                    position={this.state.infoWindowPostion}
+                    data={this.props.infoWindowData}
+                />
+            </div>
+
+
         );
     };
 

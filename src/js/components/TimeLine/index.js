@@ -16,7 +16,8 @@ class TimeLine extends React.Component {
         super(props);
 
         // console.log('TimeLine props >>>', this.props);
-
+        this.onMouseEnter = this.onMouseEnter.bind(this);
+        this.onMouseLeave = this.onMouseLeave.bind(this);
     };
 
     prepareData(){
@@ -65,6 +66,16 @@ class TimeLine extends React.Component {
         return (d1 && d2 && d1.getMonth() !== d2.getMonth()) ? true: false; 
     };
 
+    onMouseEnter(evt){
+        // console.log(evt.currentTarget.dataset.fireId);
+        const oid = evt.currentTarget.dataset.fireId || -1;
+        this.props.onMouseEnter(oid);
+    }
+
+    onMouseLeave(){
+        this.props.onMouseLeave();
+    }
+
     render(){
 
         const data = this.prepareData();
@@ -84,14 +95,14 @@ class TimeLine extends React.Component {
 
             const fireInfo = d.fires.map((fire, i)=>{
 
+                const oid = fire.attributes.OBJECTID;
                 const pctContained = fire.attributes[PCT_CONTAINED_FIELD_NAME];
                 const fireName = fire.attributes[FIRE_NAME_FIELD_NAME];
                 const legendClass = fire.classBreak;
-                const fireID = fire.attributes[FIELD_NAME_INTERNAL_ID];
 
                 return (
                     <div key={'fire-info'+i} className='leader-half trailer-half fire-info'>
-                        <div className='inline-block font-size--3 padding-left-half margin-right-half'><span data-fire-id={fireID}><strong>{stringFns.capitalizeFirstLetter(fireName)} Fire</strong>  <br/> {pctContained}% contained</span></div>
+                        <div className='inline-block font-size--3 padding-left-half margin-right-half cursor-pointer' data-fire-id={oid} onMouseEnter={this.onMouseEnter} onMouseLeave={this.onMouseLeave}><span><strong>{stringFns.capitalizeFirstLetter(fireName)} Fire</strong>  <br/> {pctContained}% contained</span></div>
                         <div className={`legend-icon legend-class-${legendClass}`}></div>
                     </div>
                 );

@@ -15,14 +15,16 @@ class App extends React.Component {
 
         this.state = {
             fireName: '',
+            // the active fire feature object that will be used to populate/position the infoWindow
+            infoWindowData: null,
             listViewData: []
         };
 
         this.mapExtentChangeHandler = this.mapExtentChangeHandler.bind(this);
-
-        window.foobar = (val)=>{
-            this.updateFireName(val);
-        };
+        this.updateInfoWindowData = this.updateInfoWindowData.bind(this);
+        // window.foobar = (val)=>{
+        //     this.updateFireName(val);
+        // };
     };
 
     updateFireName(name=''){
@@ -42,6 +44,14 @@ class App extends React.Component {
         });
     }
 
+    updateInfoWindowData(oid=-1){
+        const infoWindowData = this.props.dataStore.getActiveFireByOID(oid);
+        // console.log('setInfoWindowDataByOID', infoWindowData);
+        this.setState({
+            infoWindowData: infoWindowData 
+        });
+    }
+
     async mapExtentChangeHandler(data){
         const activeFiresInMapExtent = await this.props.dataStore.getActiveFiresInMapExtent(data.extent);
         this.updateListViewData(activeFiresInMapExtent);
@@ -55,6 +65,7 @@ class App extends React.Component {
                     rightPadding={SIDE_BAR_WIDTH}
                     activeFires={this.props.activeFires}
                     selectedFireName={this.state.fireName}
+                    infoWindowData={this.state.infoWindowData}
 
                     // handlers
                     onExtentChange={this.mapExtentChangeHandler}
@@ -73,6 +84,8 @@ class App extends React.Component {
                         />
                         <ListView 
                             data={this.state.listViewData}
+                            onMouseEnter={this.updateInfoWindowData}
+                            onMouseLeave={this.updateInfoWindowData}
                         />
                     </div>
                 </div>

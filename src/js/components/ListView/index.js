@@ -36,8 +36,16 @@ class ListView extends React.Component {
     render(){
 
         const tabLookup = {
-            timeline: <TimeLine data={this.props.data} />,
-            magnitude: <GridList data={this.props.data} />
+            timeline: <TimeLine 
+                data={this.props.data} 
+                onMouseEnter={this.props.onMouseEnter}
+                onMouseLeave={this.props.onMouseLeave}
+            />,
+            magnitude: <GridList 
+                data={this.props.data} 
+                onMouseEnter={this.props.onMouseEnter}
+                onMouseLeave={this.props.onMouseLeave}
+            />
         }
 
         return(

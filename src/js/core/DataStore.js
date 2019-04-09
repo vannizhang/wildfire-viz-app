@@ -13,13 +13,15 @@ const FIELD_NAME = {
     area: config.fields.area,
     pctContained: config.fields.pct_contained,
     startDate: config.fields.start_date,
-    reportDate: config.fields.report_date
+    reportDate: config.fields.report_date,
+    name: config.fields.name
 };
 
 const DataStore = function(options={}){
 
     const state = {
         activeFires: [],
+        activeFiresDict: {}
         // acriveFiresIndex
     }
 
@@ -47,6 +49,17 @@ const DataStore = function(options={}){
 
     const setActiveFires = (data=[])=>{
         state.activeFires = data;
+
+        data.forEach(d=>{
+            const key = d.attributes.OBJECTID;
+            state.activeFiresDict[key] = d;
+        })
+
+        console.log(state.activeFiresDict);
+    };
+
+    const getActiveFireByOID = (OID=-1)=>{
+        return state.activeFiresDict[OID];
     };
 
     const getActiveFiresInMapExtent = (mapExtent=null)=>{
@@ -173,7 +186,8 @@ const DataStore = function(options={}){
 
     return {
         init,
-        getActiveFiresInMapExtent
+        getActiveFiresInMapExtent,
+        getActiveFireByOID
     };
 };
 
