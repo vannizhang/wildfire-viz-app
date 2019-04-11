@@ -8,9 +8,9 @@ import config from '../../core/config';
 const FIELD_NAME_START_DATE = config.fields.start_date;
 const PCT_CONTAINED_FIELD_NAME = config.fields.pct_contained;
 const FIRE_NAME_FIELD_NAME = config.fields.name;
-const FIELD_NAME_INTERNAL_ID = config.fields.internal_id;
+// const FIELD_NAME_INTERNAL_ID = config.fields.internal_id;
 
-class TimeLine extends React.Component {
+class TimeLine extends React.PureComponent {
 
     constructor(props){
         super(props);
@@ -18,6 +18,7 @@ class TimeLine extends React.Component {
         // console.log('TimeLine props >>>', this.props);
         this.onMouseEnter = this.onMouseEnter.bind(this);
         this.onMouseLeave = this.onMouseLeave.bind(this);
+        this.onClick = this.onClick.bind(this);
     };
 
     prepareData(){
@@ -76,6 +77,11 @@ class TimeLine extends React.Component {
         this.props.onMouseLeave();
     }
 
+    onClick(evt){
+        const oid = evt.currentTarget.dataset.fireId || -1;
+        this.props.onClick(oid);
+    }
+
     render(){
 
         const data = this.prepareData();
@@ -101,8 +107,8 @@ class TimeLine extends React.Component {
                 const legendClass = fire.classBreak;
 
                 return (
-                    <div key={'fire-info'+i} className='leader-half trailer-half fire-info'>
-                        <div className='inline-block font-size--3 padding-left-half margin-right-half cursor-pointer' data-fire-id={oid} onMouseEnter={this.onMouseEnter} onMouseLeave={this.onMouseLeave}><span><strong>{stringFns.capitalizeFirstLetter(fireName)} Fire</strong>  <br/> {pctContained}% contained</span></div>
+                    <div key={'fire-info'+i} className='leader-half trailer-half fire-info' data-fire-id={oid} onClick={this.onClick} onMouseEnter={this.onMouseEnter} onMouseLeave={this.onMouseLeave}>
+                        <div className='inline-block font-size--3 padding-left-half margin-right-half cursor-pointer'><span><strong>{stringFns.capitalizeFirstLetter(fireName)} Fire</strong>  <br/> {pctContained}% contained</span></div>
                         <div className={`legend-icon legend-class-${legendClass}`}></div>
                     </div>
                 );

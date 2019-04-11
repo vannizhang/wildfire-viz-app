@@ -55,7 +55,7 @@ const DataStore = function(options={}){
             state.activeFiresDict[key] = d;
         })
 
-        console.log(state.activeFiresDict);
+        // console.log(state.activeFiresDict);
     };
 
     const getActiveFireByOID = (OID=-1)=>{
@@ -74,6 +74,35 @@ const DataStore = function(options={}){
         }
 
         return state.activeFires;
+    };
+
+    const searchFireByExtent = (extent=null, shouldReturnOidOnly=false)=>{
+
+        const activeFires= getActiveFiresInMapExtent(extent);
+
+        if(activeFires[0]){
+            return shouldReturnOidOnly ? activeFires[0].attributes.OBJECTID : activeFires[0];
+        }
+
+        return null;
+
+    };
+
+    const searchFireByName = (name='')=>{
+
+        if(name){
+            const textToSearch = new RegExp('^' + name + '.*$', 'i');
+
+            const fires = state.activeFires.filter(d=>{
+                return d.attributes[FIELD_NAME.name].match(textToSearch);
+            });
+
+            return fires;
+        }
+
+        return state.activeFires
+
+        
     }
 
     const formatAcitveFiresData = (features=[], classBreakInfo)=>{
@@ -187,7 +216,9 @@ const DataStore = function(options={}){
     return {
         init,
         getActiveFiresInMapExtent,
-        getActiveFireByOID
+        getActiveFireByOID,
+        searchFireByExtent,
+        searchFireByName
     };
 };
 

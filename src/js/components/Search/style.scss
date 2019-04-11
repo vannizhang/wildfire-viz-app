@@ -1,0 +1,72 @@
+.customized-input{
+    background-color: rgba(26, 0, 17, 1);
+    border: 1px solid #B77600;
+    color: #B77600;
+}
+
+.customized-input:focus {
+    border-color: #B77600;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.075), 0 0 5px #B77600
+}
+
+.customized-input::-webkit-input-placeholder { /* Chrome/Opera/Safari */
+    color: #B77600;
+}
+.customized-input::-moz-placeholder { /* Firefox 19+ */
+    color: #B77600;
+}
+.customized-input:-ms-input-placeholder { /* IE 10+ */
+    color: #B77600;
+}
+.customized-input:-moz-placeholder { /* Firefox 18- */
+    color: #B77600;
+}
+
+.search-input-wrap{
+    position: relative;
+}
+
+.search-input-btns-wrap {
+    position: absolute;
+    width: auto;
+    height: 100%;
+    top: 0;
+    right: 0;
+    padding: 5px 0 5px;
+    /* background-color: #e0e0e0; */
+
+    [class^="icon-ui-"]:before, [class*=" icon-ui-"]:before {
+        padding-right: 0.5rem;
+    }
+}
+
+.search-input-btn {
+    width: 35px;
+    /* height: 100%; */
+    color: #B77600;
+    line-height: 28px;
+}
+
+.search-input-btn:nth-child(1){
+    border-right: solid 1px #B77600;
+}
+
+.suggestion-list-container {
+    position: absolute;
+    width: 100%;
+    top: 36px;
+    z-index: 1000;
+    background-color: rgba(26, 0, 17, .9);    
+    border-left: 1px solid rgba(183, 118, 0, 0.25);
+    border-right: 1px solid rgba(183, 118, 0, 0.25);
+}
+
+.suggestion-list-container > div {
+    padding: 5px 10px;
+    border-bottom: 1px solid rgba(183, 118, 0, 0.25);
+}
+
+.suggestion-list-container > div:hover {
+    background-color: #B77600;
+    color: white;
+} 

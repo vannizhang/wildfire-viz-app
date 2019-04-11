@@ -1,6 +1,6 @@
 import React from 'react';
 
-class TabBtns extends React.Component {
+class TabBtns extends React.PureComponent {
 
     constructor(props){
         super(props);

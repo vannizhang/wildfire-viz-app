@@ -6,7 +6,7 @@ import { numberFns } from 'helper-toolkit';
 
 import config from '../../core/config';
 
-class InfoWindow extends React.Component {
+class InfoWindow extends React.PureComponent {
 
     constructor(props){
         super(props);
@@ -14,7 +14,8 @@ class InfoWindow extends React.Component {
         this.state = {
             left: 0,
             top: 0
-        }
+        };
+
     };
 
     getContent(){
@@ -29,19 +30,19 @@ class InfoWindow extends React.Component {
         const name = this.props.data.attributes[config.fields.name] || 'No Name';
         const state = config.state_fullname[this.props.data.attributes[config.fields.state]] || '';
         const fireName = name.toLowerCase() + ' fire';
-        const newsLink = 'https://news.google.com/search?q=' + fireName;
-        const twitterLink = 'https://twitter.com/search?q=' + fireName;
-        const facebookLink = 'https://www.facebook.com/search/top/?q=' + fireName;
+        const newsLink = 'https://news.google.com/search?q=' + encodeURIComponent(fireName);
+        const twitterLink = 'https://twitter.com/search?q=' + encodeURIComponent(fireName);
+        const facebookLink = 'https://www.facebook.com/search/top/?q=' + encodeURIComponent(fireName);
 
         const infoWindowContent = (
             <div className='customized-info-window'>
                 <div className='customized-popup-header'>
-                    <span className='font-size--3'>Start Date: {startDateFormatted}</span>
-                    <span className='js-close-info-window icon-ui-close avenir-bold cursor-pointer font-size--3 right'></span>
+                    <span className='font-size--3'>Start Date: <strong>{startDateFormatted}</strong></span>
+                    <span className='icon-ui-close avenir-bold cursor-pointer font-size--3 right' onClick={this.props.onClose}></span>
                 </div>
                 <div className='leader-quarter trailer-quarter'>
                     <p className='trailer-half font-size--2'> 
-                        The <strong>{fireName}</strong> in {state} is estimated to be {numberFns.numberWithCommas(affectedArea)} acres and <strong>{pctContained}%</strong> contained.
+                        The <strong>{fireName}</strong> in {state} is estimated to be <strong>{numberFns.numberWithCommas(affectedArea)}</strong> acres and <strong>{pctContained}%</strong> contained.
                     </p>
                     <div className='info-window-links padding-leader-half font-size--3'>
                         <a href={newsLink} target='_blank' className=''>News</a>
@@ -85,7 +86,7 @@ class InfoWindow extends React.Component {
                 position: 'absolute',
                 left: `${this.state.left}px`,
                 top: `${this.state.top}px`,
-                backgroundColor: 'rgba(26, 0, 17, 0.85)'
+                backgroundColor: 'rgba(26, 0, 17, 0.9)'
             }}>
                 {this.getContent()}
             </div>

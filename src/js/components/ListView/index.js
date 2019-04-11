@@ -9,7 +9,7 @@ const tabData = [
     'magnitude'
 ];
 
-class ListView extends React.Component {
+class ListView extends React.PureComponent {
 
     constructor(props){
         super(props);
@@ -40,11 +40,13 @@ class ListView extends React.Component {
                 data={this.props.data} 
                 onMouseEnter={this.props.onMouseEnter}
                 onMouseLeave={this.props.onMouseLeave}
+                onClick={this.props.onClick}
             />,
             magnitude: <GridList 
                 data={this.props.data} 
                 onMouseEnter={this.props.onMouseEnter}
                 onMouseLeave={this.props.onMouseLeave}
+                onClick={this.props.onClick}
             />
         }
 

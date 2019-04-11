@@ -6,15 +6,16 @@ import config from '../../core/config';
 
 const PCT_CONTAINED_FIELD_NAME = config.fields.pct_contained;
 const FIELD_NAME_AREA = config.fields.area
-const FIELD_NAME_INTERNAL_ID = config.fields.internal_id;
+// const FIELD_NAME_INTERNAL_ID = config.fields.internal_id;
 
-class GridList extends React.Component {
+class GridList extends React.PureComponent {
 
     constructor(props){
         super(props);
 
         this.onMouseEnter = this.onMouseEnter.bind(this);
         this.onMouseLeave = this.onMouseLeave.bind(this);
+        this.onClick = this.onClick.bind(this);
     };
 
     onMouseEnter(evt){
@@ -25,6 +26,11 @@ class GridList extends React.Component {
 
     onMouseLeave(){
         this.props.onMouseLeave();
+    }
+    
+    onClick(evt){
+        const oid = evt.currentTarget.dataset.fireId || -1;
+        this.props.onClick(oid);
     }
 
     render(){
@@ -42,7 +48,7 @@ class GridList extends React.Component {
             const legendClass = d.classBreak;
 
             return (
-                <div key={`grid-item-${i}`} className="js-show-info-window block trailer-half js-zoom-to-fire" data-fire-id={oid} onMouseEnter={this.onMouseEnter} onMouseLeave={this.onMouseLeave}>
+                <div key={`grid-item-${i}`} className="js-show-info-window block trailer-half js-zoom-to-fire" data-fire-id={oid} onClick={this.onClick} onMouseEnter={this.onMouseEnter} onMouseLeave={this.onMouseLeave}>
                     <div className={`legend-icon legend-class-${legendClass}`}>
                         <div className='bottom-pct-indicator'>
                             <div className='highlight-bar' style={{width: `${pctContained}%`}}></div>

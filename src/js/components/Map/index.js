@@ -6,9 +6,9 @@ import FireflySymbols from './FireflySymbolsLookup';
 
 const CONTAINER_ID = 'mapViewDiv';
 const WEB_MAP_ID = 'ba6c28836375471d8d6233d521f5ef26';
-const LAYER_ID_ACTIVE_FIRES = 'activeFires';
+// const LAYER_ID_ACTIVE_FIRES = 'activeFires';
 
-class Map extends React.Component {
+class Map extends React.PureComponent {
 
     constructor(props){
         super(props);
@@ -55,7 +55,7 @@ class Map extends React.Component {
 
             this.mapView.when(()=>{
                 this.mapViewOnReadyHandler();
-                this.initMapExtentOnChangeHandler();
+                this.initWatchUtils();
             }).catch((err)=>{
                 console.error(err)
             });
@@ -85,9 +85,16 @@ class Map extends React.Component {
     mapViewOnReadyHandler(){
         // console.log('mapview is ready...');
         this.showFires();
+
+        this.mapView.on('click', async(evt)=>{
+            // console.log('map on click', evt);
+            const queryExtent = await this.getQueryExtent(evt.x, evt.y);
+            // console.log('queryExtent', queryExtent.toJSON());
+            this.props.onClick(queryExtent.toJSON());
+        })
     };
 
-    initMapExtentOnChangeHandler(){
+    initWatchUtils(){
 
         loadModules([
             "esri/core/watchUtils"
@@ -106,6 +113,12 @@ class Map extends React.Component {
                     });
                 }
             });
+
+            watchUtils.watch(view, "center", (evt)=>{
+                // console.log('view center is on updating', evt);
+                this.updateInfoWindowPosition();
+            });
+
         }).catch(err=>{
             console.error(err);
         })
@@ -167,6 +180,35 @@ class Map extends React.Component {
 
     };
 
+    zoomToFire(){
+        // console.log('zoom to', this.props.activeFireToZoom);
+
+        loadModules([
+            "esri/geometry/Point"
+        ]).then(([
+            Point
+        ])=>{
+            const activeFireGeometry = new Point({
+                x: this.props.activeFireToZoom.geometry.x,
+                y: this.props.activeFireToZoom.geometry.y,
+                spatialReference: {
+                    "latestWkid": 3857,
+                    "wkid": 102100
+                }
+            });
+    
+            this.mapView.goTo({
+                target: activeFireGeometry,
+                zoom: 12
+            });
+
+        }).catch(err=>{
+            console.error(err);
+        });
+
+
+    }
+
     componentDidMount(){
         this.initMap();
     };
@@ -180,6 +222,10 @@ class Map extends React.Component {
 
         if(prevProps.infoWindowData !== this.props.infoWindowData){
             this.updateInfoWindowPosition();
+        }
+
+        if(prevProps.activeFireToZoom !== this.props.activeFireToZoom){
+            this.zoomToFire();
         }
     }
 
@@ -213,7 +259,54 @@ class Map extends React.Component {
             infoWindowPostion: { x, y }
         });
 
-    }
+    };
+
+    // it's not easy to use mapPoint as input geometry when search point features,
+    // so we should convert the map point into a extent then do the search
+    getQueryExtent(sceenPosX=0, sceenPosY=0, tolerance=10){
+
+        const screenPosXmin = sceenPosX - tolerance;
+        const screenPosYmin = sceenPosY + tolerance;
+
+        const screenPosXmax = sceenPosX + tolerance;
+        const screenPosYmax = sceenPosY - tolerance;
+
+        const geometryMin = this.mapView.toMap({
+            x: screenPosXmin,
+            y: screenPosYmin
+        }); 
+
+        const geometryMax = this.mapView.toMap({
+            x: screenPosXmax,
+            y: screenPosYmax
+        }); 
+
+        return new Promise((resolve, reject)=>{
+
+            loadModules([
+                "esri/geometry/Extent"
+            ]).then(([
+                Extent
+            ])=>{
+    
+                const queryExtent = new Extent({
+                    xmin: geometryMin.x,
+                    ymin: geometryMin.y,
+                    xmax: geometryMax.x,
+                    ymax: geometryMax.y,
+                    spatialReference: {
+                        "latestWkid": 3857,
+                        "wkid": 102100
+                    }
+                });
+    
+                resolve(queryExtent);
+    
+            }).catch(err=>{
+                reject(err);
+            });
+        });
+    };
 
     render(){
         return(
@@ -228,6 +321,7 @@ class Map extends React.Component {
                 <InfoWindow 
                     position={this.state.infoWindowPostion}
                     data={this.props.infoWindowData}
+                    onClose={this.props.onInfoWindowClose}
                 />
             </div>
 

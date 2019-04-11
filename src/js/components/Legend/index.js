@@ -2,7 +2,7 @@ import React from 'react';
 
 import { numberFns } from 'helper-toolkit';
 
-class Legend extends React.Component {
+class Legend extends React.PureComponent {
 
     constructor(props){
         super(props);
