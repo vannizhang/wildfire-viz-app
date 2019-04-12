@@ -4,15 +4,15 @@ This map presents active wildfires in the United States. The source for the loca
 
 [View it live](https://vannizhang.github.io/wildfire-viz-app/)
 
-![App](./img/screenshot.png)
+![App](./src/assets/img/screenshot.png)
 
 ## Features
 Fires are sorted by burn size (in the grid view) or age (in the timeline view). This application is an unofficial presentation of this data and is intended for reference only. 
 
 ## Requirements
 
-- [ArcGIS API for JavaScript (version 3.24)](https://developers.arcgis.com/javascript/index.html)
-- [jQuery](http://jquery.com/)
+- [ArcGIS API for JavaScript (version 4.11)](https://developers.arcgis.com/javascript/index.html)
+- [React.js](https://reactjs.org/)
 
 
 ## Resources
