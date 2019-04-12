@@ -1,5 +1,5 @@
 import React from 'react';
-import * as calcite from 'calcite-web';
+import * as calcite from 'calcite-web/dist/js/calcite-web';
 
 import Map from '../Map';
 import ListView from '../ListView';
