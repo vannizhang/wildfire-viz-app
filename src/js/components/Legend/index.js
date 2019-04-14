@@ -28,7 +28,7 @@ class Legend extends React.PureComponent {
 
         return(
             <div id='legendDiv'>
-                <div className="block-group block-group-5-up leader-half legend-filter-container">
+                <div className="block-group block-group-5-up leader-half trailer-half legend-filter-container">
                     {legendItems}
                 </div>
             </div>

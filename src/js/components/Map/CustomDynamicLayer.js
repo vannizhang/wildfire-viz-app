@@ -1,3 +1,5 @@
+'use strict';
+
 import {loadModules} from 'esri-loader';
 
 class CustomDynamicLayer {
@@ -8,6 +10,7 @@ class CustomDynamicLayer {
         layerParams = {}
     }={}){
 
+        // all values in map paramters need to be in type of string
         Object.keys(mapParameters).forEach(key=>{
             if(typeof mapParameters[key] !== 'string'){
                 console.error(`error when init CustomDynamicLayer >>> type of map parameter: "${key}" is not string`);
@@ -49,16 +52,19 @@ class CustomDynamicLayer {
         return new Promise((resolve, reject)=>{
 
             loadModules([
-                "esri/layers/BaseDynamicLayer"
+                "esri/layers/BaseDynamicLayer",
+                "esri/request"
             ]).then(([
-                BaseDynamicLayer
+                BaseDynamicLayer,
+                esriRequest
             ])=>{
     
                 const CustomMapServiceLayer = BaseDynamicLayer.createSubclass({
     
                     properties: {
                         mapUrl: null,
-                        mapParameters: null
+                        mapParameters: null,
+                        cssFilter: null
                     },
     
                     // Override the getImageUrl() method to generate URL
@@ -73,6 +79,36 @@ class CustomDynamicLayer {
                         const queryString = this._joinUrlVariables(urlVariables);
                         return this.mapUrl + "?" + queryString;
                     },
+
+                    // // Fetches images for given extent and size
+                    fetchImage: function (extent, width, height){
+                        const url = this.getImageUrl(extent, width, height);
+                    
+                        // request for the image  based on the generated url
+                        return esriRequest(url, {
+                            responseType: "image"
+                        })
+                        .then(function(response) {
+                            const image = response.data;
+                        
+                            // create a canvas with teal fill
+                            const canvas = document.createElement("canvas");
+                            const context = canvas.getContext("2d");
+                            canvas.width = width;
+                            canvas.height = height;
+                        
+                            // // Apply destination-atop operation to the image returned from the server
+                            if(this.cssFilter){
+                                context.filter = this.cssFilter;
+                            }
+                            context.fillRect(0, 0, width, height);
+                            context.globalCompositeOperation = "destination-atop";
+                            context.drawImage(image, 0, 0, width, height);
+                        
+                            return canvas;
+                        }.bind(this));
+                    },
+
     
                     // Prepare query parameters for the URL to an image to be generated
                     _prepareQuery: function(queryParameters, extent, width, height) {
@@ -118,7 +154,7 @@ class CustomDynamicLayer {
                 resolve(layer);
     
             }).catch(err=>{
-                // console.error(err);
+                console.error(err);
                 reject(err);
             });
         });

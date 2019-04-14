@@ -4,6 +4,7 @@ import {loadModules} from 'esri-loader';
 import InfoWindow from '../InfoWindow';
 import FireflySymbols from './FireflySymbolsLookup';
 import CustomDynamicLayer from './CustomDynamicLayer';
+import config from '../../core/config';
 
 const CONTAINER_ID = 'mapViewDiv';
 const WEB_MAP_ID = 'ba6c28836375471d8d6233d521f5ef26';
@@ -102,23 +103,23 @@ class Map extends React.PureComponent {
 
     async initSmokeForecastLayer(){
 
+        const time = this.props.smokeForecastTime.toString();
+
         this.smokeForecastLayer = await new CustomDynamicLayer({
-            mapView: this.mapView,
-            // id: 'smokeForecastLayer',
             layerParams: {
                 id: 'smokeForecastLayer',
-                opacity: .75,
-                visible: false
+                opacity: .7,
+                visible: this.props.isSmokeForecastLayerVisible,
+                cssFilter: "invert(100%) blur(5px) saturate(.4)"
             },
-            mapUrl: 'https://utility.arcgis.com/usrsvcs/servers/1bb73533826544d1a2c47475c2ae5aee/rest/services/LiveFeeds/NDGD_SmokeForecast/MapServer/export',
+            mapUrl: config.smoke_layer.url + '/export',
             mapParameters: {
-                layers: '0'
+                layers: '0',
+                time
             }
         });
 
         this.mapView.map.add(this.smokeForecastLayer, 0);
-
-        console.log(this.smokeForecastLayer);
 
     };
 
@@ -237,6 +238,13 @@ class Map extends React.PureComponent {
 
     };
 
+    setTimeForSmokeForecastLayer(){
+        if(this.smokeForecastLayer.visible){
+            this.smokeForecastLayer.mapParameters.time = this.props.smokeForecastTime.toString();
+            this.smokeForecastLayer.refresh();
+        }
+    };
+
     componentDidMount(){
         this.initMap();
     };
@@ -254,6 +262,14 @@ class Map extends React.PureComponent {
 
         if(prevProps.activeFireToZoom !== this.props.activeFireToZoom){
             this.zoomToFire();
+        }
+
+        if(prevProps.isSmokeForecastLayerVisible !== this.props.isSmokeForecastLayerVisible){
+            this.smokeForecastLayer.visible = this.props.isSmokeForecastLayerVisible;
+        }
+
+        if(prevProps.smokeForecastTime !== this.props.smokeForecastTime){
+            this.setTimeForSmokeForecastLayer();
         }
     }
 

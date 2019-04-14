@@ -5,6 +5,7 @@ import Map from '../Map';
 import ListView from '../ListView';
 import Legend from '../Legend';
 import Search from '../Search';
+import Checkbox from '../Checkbox';
 
 const SIDE_BAR_WIDTH = 450;
 
@@ -20,14 +21,19 @@ class App extends React.Component {
             // the active fire feature object that will be used to populate/position the infoWindow
             infoWindowData: null,
             activeFireToZoom: null,
+            isSmokeForecastLayerVisible: false,
+            smokeForecastTime: this.props.smokeLayerTimeInfo.timeExtent[0],
             listViewData: []
         };
+
+        this.timerForSmokeForecastLayerAnimation = null;
 
         this.mapExtentChangeHandler = this.mapExtentChangeHandler.bind(this);
         this.mapOnClickHandler = this.mapOnClickHandler.bind(this);
         this.updateInfoWindowData = this.updateInfoWindowData.bind(this);
         this.zoomToActiveFire = this.zoomToActiveFire.bind(this);
         this.updateFireName = this.updateFireName.bind(this);
+        this.toggleSmokeForecastLayer = this.toggleSmokeForecastLayer.bind(this);
     };
 
     updateFireName(name=''){
@@ -56,12 +62,45 @@ class App extends React.Component {
         });
     }
 
+    updateSmokeForecastTime(){
+        this.setState((prevState)=>{
+            const prevSmokeForecastTime = new Date(prevState.smokeForecastTime);
+            const nextSmokeForecastTime = prevSmokeForecastTime.setHours(prevSmokeForecastTime.getHours() + 1);
+            const newSmokeForecastTime = nextSmokeForecastTime > this.props.smokeLayerTimeInfo.timeExtent[1] ? this.props.smokeLayerTimeInfo.timeExtent[0] : nextSmokeForecastTime;
+            return {
+                smokeForecastTime: newSmokeForecastTime
+            }   
+        }, ()=>{
+            // console.log('updateSmokeForecastTime', this.state.smokeForecastTime);
+        })
+    }
+
     zoomToActiveFire(oid=-1){
         const activeFireData = this.props.dataStore.getActiveFireByOID(oid);
 
         this.setState({
             activeFireToZoom: activeFireData
         });
+    }
+
+    toggleSmokeForecastLayer(isVisible){
+        this.setState({
+            isSmokeForecastLayerVisible: isVisible
+        },()=>{
+            this.animateSmokeForecastLayer();
+        });
+    }
+
+    animateSmokeForecastLayer(){
+        if(this.state.isSmokeForecastLayerVisible){
+
+            this.timerForSmokeForecastLayerAnimation = setInterval(()=>{
+                this.updateSmokeForecastTime();
+            }, 1500);
+        } else {
+            clearInterval(this.timerForSmokeForecastLayerAnimation);
+        }
+
     }
 
     mapExtentChangeHandler(data){
@@ -95,6 +134,8 @@ class App extends React.Component {
                     selectedFireName={this.state.fireName}
                     infoWindowData={this.state.infoWindowData}
                     activeFireToZoom={this.state.activeFireToZoom}
+                    isSmokeForecastLayerVisible={this.state.isSmokeForecastLayerVisible}
+                    smokeForecastTime={this.state.smokeForecastTime}
 
                     // handlers
                     onExtentChange={this.mapExtentChangeHandler}
@@ -118,6 +159,12 @@ class App extends React.Component {
                         <Legend 
                             data={this.props.classBreakInfos}
                         />
+
+                        <Checkbox
+                            smokeForecastTime={this.state.smokeForecastTime}
+                            onChange={this.toggleSmokeForecastLayer}
+                        />
+
                         <ListView 
                             data={this.state.listViewData}
                             onMouseEnter={this.updateInfoWindowData}

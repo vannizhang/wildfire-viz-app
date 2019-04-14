@@ -40,9 +40,12 @@ const DataStore = function(options={}){
 
         setActiveFires(activeFires);
 
+        const smokeLayerInfo = await getSmokeLayerInfo();
+
         return {
             activeFires,
-            classBreakInfos: classBreakRendererInfo.classBreakInfos
+            classBreakInfos: classBreakRendererInfo.classBreakInfos,
+            smokeLayerInfo
         };
 
     };
@@ -211,6 +214,31 @@ const DataStore = function(options={}){
             });
 
         });
+    };
+
+    const getSmokeLayerInfo = ()=>{
+
+        const requestUrl = config.smoke_layer.url + '/0?f=json';
+
+        return new Promise((resolve, reject)=>{
+            
+            axios.get(requestUrl)
+            .then(function (response) {
+
+                const responseData = response.data;
+
+                if(responseData.error){
+                    reject(responseData.error);
+                } else{
+                    resolve(responseData);
+                }
+            })
+            .catch(function (error) {
+                reject(error);
+            });
+
+        });
+
     };
 
     return {
