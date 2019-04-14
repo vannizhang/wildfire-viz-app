@@ -3,6 +3,7 @@ import {loadModules} from 'esri-loader';
 
 import InfoWindow from '../InfoWindow';
 import FireflySymbols from './FireflySymbolsLookup';
+import CustomDynamicLayer from './CustomDynamicLayer';
 
 const CONTAINER_ID = 'mapViewDiv';
 const WEB_MAP_ID = 'ba6c28836375471d8d6233d521f5ef26';
@@ -24,6 +25,7 @@ class Map extends React.PureComponent {
 
         this.mapView = null;
         this.activeFiresLayer = null;
+        this.smokeForecastLayer = null;
 
         // this.state = {
         //     isSmokeLayerVisible: false
@@ -86,12 +88,38 @@ class Map extends React.PureComponent {
         // console.log('mapview is ready...');
         this.showFires();
 
+        this.initSmokeForecastLayer();
+
         this.mapView.on('click', async(evt)=>{
             // console.log('map on click', evt);
             const queryExtent = await this.getQueryExtent(evt.x, evt.y);
             // console.log('queryExtent', queryExtent.toJSON());
             this.props.onClick(queryExtent.toJSON());
-        })
+        });
+
+        // this.addCustomMapServiceLayer();
+    };
+
+    async initSmokeForecastLayer(){
+
+        this.smokeForecastLayer = await new CustomDynamicLayer({
+            mapView: this.mapView,
+            // id: 'smokeForecastLayer',
+            layerParams: {
+                id: 'smokeForecastLayer',
+                opacity: .75,
+                visible: false
+            },
+            mapUrl: 'https://utility.arcgis.com/usrsvcs/servers/1bb73533826544d1a2c47475c2ae5aee/rest/services/LiveFeeds/NDGD_SmokeForecast/MapServer/export',
+            mapParameters: {
+                layers: '0'
+            }
+        });
+
+        this.mapView.map.add(this.smokeForecastLayer, 0);
+
+        console.log(this.smokeForecastLayer);
+
     };
 
     initWatchUtils(){
@@ -207,7 +235,7 @@ class Map extends React.PureComponent {
         });
 
 
-    }
+    };
 
     componentDidMount(){
         this.initMap();
