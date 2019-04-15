@@ -12,6 +12,7 @@ html{overflow-y:auto;min-height:100%;font-size:100%;-webkit-text-size-adjust:100
   position: absolute;
   top: 0;
   right: 0;
+  width: 450px;
   height: 100%;
   z-index: 100;
   background-color: rgba(26, 0, 17, 0.8);
@@ -19,6 +20,13 @@ html{overflow-y:auto;min-height:100%;font-size:100%;-webkit-text-size-adjust:100
   color: #B77600; }
   .side-bar .content-wrap {
     padding: 1rem; }
+
+.side-bar.is-minimized {
+  top: unset;
+  bottom: 0;
+  height: auto; }
+  .side-bar.is-minimized .content-wrap {
+    display: none; }
 
 .legend-icon {
   position: relative;
@@ -66,6 +74,10 @@ html{overflow-y:auto;min-height:100%;font-size:100%;-webkit-text-size-adjust:100
 .customized-modal .input-group .btn {
   border: 1px solid #B77600;
   color: #E4BC37; }
+
+@media (max-width: 450px) {
+  .side-bar {
+    width: 100%; } }
 
 .customized-info-window {
   color: #B77600;

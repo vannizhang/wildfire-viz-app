@@ -7,8 +7,6 @@ import Legend from '../Legend';
 import Search from '../Search';
 import Checkbox from '../Checkbox';
 
-const SIDE_BAR_WIDTH = 450;
-
 class App extends React.Component {
 
     constructor(props){
@@ -23,7 +21,9 @@ class App extends React.Component {
             activeFireToZoom: null,
             isSmokeForecastLayerVisible: false,
             smokeForecastTime: this.props.smokeLayerTimeInfo.timeExtent[0],
-            listViewData: []
+            listViewData: [],
+
+            isSidebarMinimized: false
         };
 
         this.timerForSmokeForecastLayerAnimation = null;
@@ -34,6 +34,7 @@ class App extends React.Component {
         this.zoomToActiveFire = this.zoomToActiveFire.bind(this);
         this.updateFireName = this.updateFireName.bind(this);
         this.toggleSmokeForecastLayer = this.toggleSmokeForecastLayer.bind(this);
+        this.toggleSidebar = this.toggleSidebar.bind(this);
     };
 
     updateFireName(name=''){
@@ -120,6 +121,12 @@ class App extends React.Component {
         // console.log(activeFires);
     }
 
+    toggleSidebar(){
+        this.setState({
+            isSidebarMinimized: !this.state.isSidebarMinimized
+        });
+    }
+
     componentDidMount(){
         calcite.init();
     }
@@ -129,7 +136,7 @@ class App extends React.Component {
             <div className='main-content'>
 
                 <Map 
-                    rightPadding={SIDE_BAR_WIDTH}
+                    rightPadding={window.outerWidth <= 450 ? 0 : 450}
                     activeFires={this.props.activeFires}
                     selectedFireName={this.state.fireName}
                     infoWindowData={this.state.infoWindowData}
@@ -143,8 +150,13 @@ class App extends React.Component {
                     onClick={this.mapOnClickHandler}
                 />
                 
-                <div className='side-bar' style={{width: SIDE_BAR_WIDTH}}>
-                    <div className='content-wrap'>
+                <div className={`side-bar ${this.state.isSidebarMinimized ? 'is-minimized': ''}`}>
+
+                    <div className='phone-show text-center padding-leader-quarter ladding-trailer-quarter' onClick={this.toggleSidebar}>
+                        <span className={`${this.state.isSidebarMinimized ? 'icon-ui-plus': 'icon-ui-minus'}`}></span>
+                    </div>
+
+                    <div className={`content-wrap`}>
 
                         <Search 
                             data={this.props.activeFires}

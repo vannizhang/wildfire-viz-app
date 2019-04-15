@@ -7,7 +7,7 @@
     position: absolute;
     top: 0;
     right: 0;
-    // width: 450px;
+    width: 450px;
     height: 100%;
     z-index: 100;
     background-color: rgba(26, 0, 17, 0.8);
@@ -16,6 +16,16 @@
 
     .content-wrap {
         padding: 1rem;
+    }
+}
+
+.side-bar.is-minimized {
+    top: unset;
+    bottom: 0;
+    height: auto;
+
+    .content-wrap {
+        display: none;
     }
 }
 
@@ -77,4 +87,10 @@
 .customized-modal .input-group .btn {
     border: 1px solid #B77600;
     color: #E4BC37;
+}
+
+@media (max-width: 450px) { 
+    .side-bar {
+        width: 100%;
+    }
 }
