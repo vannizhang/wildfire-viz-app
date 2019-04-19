@@ -101,8 +101,8 @@ class CustomDynamicLayer {
                             if(this.cssFilter){
                                 context.filter = this.cssFilter;
                             }
-                            context.fillRect(0, 0, width, height);
-                            context.globalCompositeOperation = "destination-atop";
+                            // context.fillRect(0, 0, width, height);
+                            context.globalCompositeOperation = "normal";
                             context.drawImage(image, 0, 0, width, height);
                         
                             return canvas;
