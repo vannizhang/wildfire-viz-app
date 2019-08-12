@@ -183,6 +183,8 @@ class Map extends React.PureComponent {
                 });
 
                 this.activeFiresLayer.addMany([graphicForBackground, graphicForActiveFire]);
+
+                this.mapView.map.reorder(this.activeFiresLayer, this.mapView.map.layers.length);
             });
 
         }).catch(err=>{
@@ -240,7 +242,17 @@ class Map extends React.PureComponent {
 
     setTimeForSmokeForecastLayer(){
         if(this.smokeForecastLayer.visible){
-            this.smokeForecastLayer.mapParameters.time = this.props.smokeForecastTime.toString();
+
+            const startTime = new Date(this.props.smokeForecastTime);
+
+            const endTime = startTime.setHours(startTime.getHours() + 1);
+
+            const time = [
+                this.props.smokeForecastTime.toString(),
+                endTime.toString()
+            ];
+
+            this.smokeForecastLayer.mapParameters.time = time.join(',');
             this.smokeForecastLayer.refresh();
         }
     };
@@ -265,11 +277,16 @@ class Map extends React.PureComponent {
         }
 
         if(prevProps.isSmokeForecastLayerVisible !== this.props.isSmokeForecastLayerVisible){
-            this.smokeForecastLayer.visible = this.props.isSmokeForecastLayerVisible;
+            if(this.smokeForecastLayer){
+                this.smokeForecastLayer.visible = this.props.isSmokeForecastLayerVisible;
+            }
+            
         }
 
         if(prevProps.smokeForecastTime !== this.props.smokeForecastTime){
-            this.setTimeForSmokeForecastLayer();
+            if(this.smokeForecastLayer){
+                this.setTimeForSmokeForecastLayer();
+            }
         }
     }
 
