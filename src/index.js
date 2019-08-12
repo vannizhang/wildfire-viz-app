@@ -14,7 +14,7 @@ import App from './js/components/App/index';
         const dataStore = new DataStore();
 
         const appData = await dataStore.init();
-        console.log(appData);
+        // console.log(appData);
 
         ReactDOM.render(
             <App 

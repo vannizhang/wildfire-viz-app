@@ -2,7 +2,7 @@ import './style.scss';
 
 import React from 'react';
 import moment from 'moment';
-import { numberFns } from 'helper-toolkit';
+import { numberFns } from 'helper-toolkit-ts';
 
 import config from '../../core/config';
 

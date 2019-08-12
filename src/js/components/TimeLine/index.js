@@ -2,7 +2,7 @@ import './style.scss';
 
 import React from 'react';
 import moment from 'moment';
-import { stringFns } from 'helper-toolkit';
+import { stringFns } from 'helper-toolkit-ts';
 import config from '../../core/config';
 
 const FIELD_NAME_START_DATE = config.fields.start_date;

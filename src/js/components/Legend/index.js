@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { numberFns } from 'helper-toolkit';
+import { numberFns } from 'helper-toolkit-ts';
 
 class Legend extends React.PureComponent {
 

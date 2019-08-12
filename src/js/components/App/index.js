@@ -6,13 +6,14 @@ import ListView from '../ListView';
 import Legend from '../Legend';
 import Search from '../Search';
 import Checkbox from '../Checkbox';
+import { urlFns } from 'helper-toolkit-ts';
 
 class App extends React.Component {
 
     constructor(props){
         super(props);
 
-        console.log(this.props);
+        // console.log(this.props);
 
         this.state = {
             fireName: '',
@@ -107,6 +108,7 @@ class App extends React.Component {
     mapExtentChangeHandler(data){
         const activeFiresInMapExtent = this.props.dataStore.getActiveFiresInMapExtent(data.extent);
         this.updateListViewData(activeFiresInMapExtent);
+        this.updateMapExtInUrl(data.extent);
     }
 
     mapOnClickHandler(extent){
@@ -127,11 +129,18 @@ class App extends React.Component {
         });
     }
 
+    updateMapExtInUrl(extent={}){
+        const key = 'ext';
+        const value = `${extent.xmin},${extent.ymin},${extent.xmax},${extent.ymax}`;
+        urlFns.updateQueryParam({key, value});
+    }
+
     componentDidMount(){
         calcite.init();
     }
 
     render(){
+    
         return(
             <div className='main-content'>
 

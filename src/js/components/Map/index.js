@@ -5,6 +5,7 @@ import InfoWindow from '../InfoWindow';
 import FireflySymbols from './FireflySymbolsLookup';
 import CustomDynamicLayer from './CustomDynamicLayer';
 import config from '../../core/config';
+import { urlFns } from 'helper-toolkit-ts';
 
 const CONTAINER_ID = 'mapViewDiv';
 const WEB_MAP_ID = 'ba6c28836375471d8d6233d521f5ef26';
@@ -42,12 +43,15 @@ class Map extends React.PureComponent {
             MapView, WebMap,
         ])=>{
 
+            const initMapExt = this.parsePredefineExtent();
+
             this.mapView = new MapView({
                 map: new WebMap({
                     portalItem: { 
                         id: WEB_MAP_ID
                     }
                 }),
+                extent: initMapExt,
                 container: CONTAINER_ID,
                 padding: {
                     right: this.props.rightPadding || 0
@@ -67,6 +71,23 @@ class Map extends React.PureComponent {
             console.error(err);
         })
     };
+
+    parsePredefineExtent(){
+        const searchParams = urlFns.parseQuery();
+        const data = searchParams.ext ? searchParams.ext.split(',') : null;
+
+        if(!data || data.length !== 4){
+            return undefined;
+        }
+
+        return {
+            xmin: +data[0],
+            ymin: +data[1],
+            xmax: +data[2],
+            ymax: +data[3],
+            spatialReference: { latestWkid: 3857, wkid: 102100 }
+        };
+    }
 
     initLayers(){
 
