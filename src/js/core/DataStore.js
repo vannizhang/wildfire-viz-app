@@ -29,10 +29,12 @@ const DataStore = function(options={}){
 
         const where = `${FIELD_NAME.pctContained} < 100 AND ${FIELD_NAME.area} > 0`;
 
-        const classBreakRendererInfo = await getClassBreakRendererInfo({ 
-            classificationField: FIELD_NAME.area, 
-            where 
-        });
+        // const classBreakRendererInfo = await getClassBreakRendererInfo({ 
+        //     classificationField: FIELD_NAME.area, 
+        //     where 
+        // });
+
+        const classBreakRendererInfo = {"type":"classBreaks","field":"AREA_","classificationMethod":"esriClassifyNaturalBreaks","minValue":8,"classBreakInfos":[{"classMaxValue":1592,"label":"8.000000 - 1592.000000","description":"","symbol":{"type":"esriSMS","style":"esriSMSCircle","size":4,"angle":0,"xoffset":0,"yoffset":0,"outline":{"color":[0,0,0,255],"width":1},"color":[0,255,0,255]}},{"classMaxValue":4907,"label":"1592.000001 - 4907.000000","description":"","symbol":{"type":"esriSMS","style":"esriSMSCircle","size":4,"angle":0,"xoffset":0,"yoffset":0,"outline":{"color":[0,0,0,255],"width":1},"color":[0,255,128,255]}},{"classMaxValue":10296,"label":"4907.000001 - 10296.000000","description":"","symbol":{"type":"esriSMS","style":"esriSMSCircle","size":4,"angle":0,"xoffset":0,"yoffset":0,"outline":{"color":[0,0,0,255],"width":1},"color":[0,255,255,255]}},{"classMaxValue":21510,"label":"10296.000001 - 21510.000000","description":"","symbol":{"type":"esriSMS","style":"esriSMSCircle","size":4,"angle":0,"xoffset":0,"yoffset":0,"outline":{"color":[0,0,0,255],"width":1},"color":[0,128,255,255]}},{"classMaxValue":167164,"label":"21510.000001 - 167164.000000","description":"","symbol":{"type":"esriSMS","style":"esriSMSCircle","size":4,"angle":0,"xoffset":0,"yoffset":0,"outline":{"color":[0,0,0,255],"width":1},"color":[0,0,255,255]}}]}
 
         let activeFires = await queryActiveFires({ where });
 
