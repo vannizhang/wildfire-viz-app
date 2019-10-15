@@ -1,5 +1,5 @@
 import axios from "axios";
-
+import moment from 'moment';
 import config from './config';
 
 const Promise = require('es6-promise').Promise;
@@ -7,7 +7,8 @@ const Promise = require('es6-promise').Promise;
 const WILDFIRE_ACTIVITY_BASE_URL = "https://utility.arcgis.com/usrsvcs/servers/fc88a2aa759f4ac28e63d2f58b2815cc/rest/services/LiveFeeds/Wildfire_Activity/MapServer";
 const URL_QUERY_WILDFIRE_ACTIVITY = WILDFIRE_ACTIVITY_BASE_URL + "/0/query";
 const URL_QUERY_WILDFIRE_PERIMETER = WILDFIRE_ACTIVITY_BASE_URL + "/2/query";
-const REQUEST_URL_WILDFIRE_GENERATE_RENDERER = WILDFIRE_ACTIVITY_BASE_URL + "/dynamicLayer/generateRenderer";
+const REQUEST_URL_WILDFIRE_GENERATE_RENDERER = WILDFIRE_ACTIVITY_BASE_URL + "/0/generateRenderer";
+const LOCALSTORAGE_KEY_CLASS_BREAK_RENDERER = 'classBreakRendererInfo';
 
 const FIELD_NAME = {
     area: config.fields.area,
@@ -27,14 +28,14 @@ const DataStore = function(options={}){
 
     const init = async()=>{
 
-        const where = `${FIELD_NAME.pctContained} < 100 AND ${FIELD_NAME.area} > 0`;
+        const where = `${FIELD_NAME.pctContained} < 100 AND ${FIELD_NAME.area} > 0 AND ACTIVE = 'Y'`;
 
-        // const classBreakRendererInfo = await getClassBreakRendererInfo({ 
-        //     classificationField: FIELD_NAME.area, 
-        //     where 
-        // });
+        const classBreakRendererInfo = await getClassBreakRendererInfo({ 
+            classificationField: FIELD_NAME.area, 
+            where 
+        });
 
-        const classBreakRendererInfo = {"type":"classBreaks","field":"AREA_","classificationMethod":"esriClassifyNaturalBreaks","minValue":8,"classBreakInfos":[{"classMaxValue":1592,"label":"8.000000 - 1592.000000","description":"","symbol":{"type":"esriSMS","style":"esriSMSCircle","size":4,"angle":0,"xoffset":0,"yoffset":0,"outline":{"color":[0,0,0,255],"width":1},"color":[0,255,0,255]}},{"classMaxValue":4907,"label":"1592.000001 - 4907.000000","description":"","symbol":{"type":"esriSMS","style":"esriSMSCircle","size":4,"angle":0,"xoffset":0,"yoffset":0,"outline":{"color":[0,0,0,255],"width":1},"color":[0,255,128,255]}},{"classMaxValue":10296,"label":"4907.000001 - 10296.000000","description":"","symbol":{"type":"esriSMS","style":"esriSMSCircle","size":4,"angle":0,"xoffset":0,"yoffset":0,"outline":{"color":[0,0,0,255],"width":1},"color":[0,255,255,255]}},{"classMaxValue":21510,"label":"10296.000001 - 21510.000000","description":"","symbol":{"type":"esriSMS","style":"esriSMSCircle","size":4,"angle":0,"xoffset":0,"yoffset":0,"outline":{"color":[0,0,0,255],"width":1},"color":[0,128,255,255]}},{"classMaxValue":167164,"label":"21510.000001 - 167164.000000","description":"","symbol":{"type":"esriSMS","style":"esriSMSCircle","size":4,"angle":0,"xoffset":0,"yoffset":0,"outline":{"color":[0,0,0,255],"width":1},"color":[0,0,255,255]}}]}
+        // const classBreakRendererInfo = {"type":"classBreaks","field":"AREA_","classificationMethod":"esriClassifyNaturalBreaks","minValue":8,"classBreakInfos":[{"classMaxValue":1592,"label":"8.000000 - 1592.000000","description":"","symbol":{"type":"esriSMS","style":"esriSMSCircle","size":4,"angle":0,"xoffset":0,"yoffset":0,"outline":{"color":[0,0,0,255],"width":1},"color":[0,255,0,255]}},{"classMaxValue":4907,"label":"1592.000001 - 4907.000000","description":"","symbol":{"type":"esriSMS","style":"esriSMSCircle","size":4,"angle":0,"xoffset":0,"yoffset":0,"outline":{"color":[0,0,0,255],"width":1},"color":[0,255,128,255]}},{"classMaxValue":10296,"label":"4907.000001 - 10296.000000","description":"","symbol":{"type":"esriSMS","style":"esriSMSCircle","size":4,"angle":0,"xoffset":0,"yoffset":0,"outline":{"color":[0,0,0,255],"width":1},"color":[0,255,255,255]}},{"classMaxValue":21510,"label":"10296.000001 - 21510.000000","description":"","symbol":{"type":"esriSMS","style":"esriSMSCircle","size":4,"angle":0,"xoffset":0,"yoffset":0,"outline":{"color":[0,0,0,255],"width":1},"color":[0,128,255,255]}},{"classMaxValue":167164,"label":"21510.000001 - 167164.000000","description":"","symbol":{"type":"esriSMS","style":"esriSMSCircle","size":4,"angle":0,"xoffset":0,"yoffset":0,"outline":{"color":[0,0,0,255],"width":1},"color":[0,0,255,255]}}]}
 
         let activeFires = await queryActiveFires({ where });
 
@@ -183,39 +184,75 @@ const DataStore = function(options={}){
 
         return new Promise((resolve, reject)=>{
 
-            axios.get(REQUEST_URL_WILDFIRE_GENERATE_RENDERER, {
-                params: {
-                    classificationDef: {
-                        "type":"classBreaksDef",
-                        "classificationField": options.classificationField,
-                        "classificationMethod": 'esriClassifyNaturalBreaks',
-                        "breakCount": 5
-                    },
-                    layer: {
-                        "source": {
-                            "type":"mapLayer",
-                            "mapLayerId": 0
-                        }
-                    },
-                    where: options.where,
-                    f: 'json',
-                }
-            })
-            .then(function (response) {
+            const classBreakRendererInfo = getClassBreakRendererInfoFromLocalStorage();
 
-                const responseData = response.data;
-
-                if(responseData.error){
-                    reject(responseData.error);
-                } else{
-                    resolve(responseData);
-                }
-            })
-            .catch(function (error) {
-                reject(error);
-            });
+            if(classBreakRendererInfo){
+                resolve(classBreakRendererInfo);
+            } else {
+                axios.get(REQUEST_URL_WILDFIRE_GENERATE_RENDERER, {
+                    params: {
+                        classificationDef: {
+                            "type":"classBreaksDef",
+                            "classificationField": options.classificationField,
+                            "classificationMethod": 'esriClassifyNaturalBreaks',
+                            "breakCount": 5
+                        },
+                        // layer: {
+                        //     "source": {
+                        //         "type":"mapLayer",
+                        //         "mapLayerId": 0
+                        //     }
+                        // },
+                        where: options.where,
+                        f: 'json',
+                    }
+                })
+                .then(function (response) {
+    
+                    const responseData = response.data;
+    
+                    if(responseData.error){
+                        reject(responseData.error);
+                    } else{
+                        setClassBreakRendererInfoInLocalStorage(responseData)
+                        resolve(responseData);
+                    }
+                })
+                .catch(function (error) {
+                    reject(error);
+                });
+            }
 
         });
+    };
+
+    const getClassBreakRendererInfoFromLocalStorage = ()=>{
+
+        const itemFromLocalStorage = localStorage.getItem(LOCALSTORAGE_KEY_CLASS_BREAK_RENDERER) 
+            ? JSON.parse(localStorage.getItem(LOCALSTORAGE_KEY_CLASS_BREAK_RENDERER)) 
+            : null;
+
+        if(!itemFromLocalStorage){
+            return null;
+        }
+
+        const hasExpired = moment().isAfter(itemFromLocalStorage.expiration);
+
+        return !hasExpired && itemFromLocalStorage.data ? itemFromLocalStorage.data : itemFromLocalStorage.data;
+    };
+
+    const setClassBreakRendererInfoInLocalStorage = (classBreakRendererInfo=null)=>{
+
+        const expiration = moment().add(2, 'days').valueOf();
+
+        if(classBreakRendererInfo){
+            const itemToSave = {
+                data: classBreakRendererInfo,
+                expiration
+            };
+    
+            localStorage.setItem(LOCALSTORAGE_KEY_CLASS_BREAK_RENDERER, JSON.stringify(itemToSave));
+        }
     };
 
     const getSmokeLayerInfo = ()=>{
