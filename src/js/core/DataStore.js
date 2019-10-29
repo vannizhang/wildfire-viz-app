@@ -28,7 +28,7 @@ const DataStore = function(options={}){
 
     const init = async()=>{
 
-        const where = `${FIELD_NAME.pctContained} < 100 AND ${FIELD_NAME.area} > 0 AND ACTIVE = 'Y'`;
+        const where = `${FIELD_NAME.pctContained} < 100 AND ACTIVE = 'Y'`;
 
         const classBreakRendererInfo = await getClassBreakRendererInfo({ 
             classificationField: FIELD_NAME.area, 
@@ -140,7 +140,7 @@ const DataStore = function(options={}){
     };
 
     const queryActiveFires = ({
-        where = `${FIELD_NAME.pctContained} < 100 AND ${FIELD_NAME.area} > 0`,
+        where = `${FIELD_NAME.pctContained} < 100`,
         extentGeometry = null
     }={})=>{
 
