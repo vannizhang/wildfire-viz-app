@@ -1,5 +1,5 @@
 import React from 'react';
-import {loadModules} from 'esri-loader';
+import { loadModules, loadCss } from 'esri-loader';
 
 import InfoWindow from '../InfoWindow';
 import FireflySymbols from './FireflySymbolsLookup';
@@ -7,9 +7,7 @@ import CustomDynamicLayer from './CustomDynamicLayer';
 import config from '../../core/config';
 import { urlFns } from 'helper-toolkit-ts';
 
-const CONTAINER_ID = 'mapViewDiv';
 const WEB_MAP_ID = 'ba6c28836375471d8d6233d521f5ef26';
-// const LAYER_ID_ACTIVE_FIRES = 'activeFires';
 
 class Map extends React.PureComponent {
 
@@ -25,6 +23,8 @@ class Map extends React.PureComponent {
             }
         }
 
+        this.mapContainerRef = React.createRef();
+
         this.mapView = null;
         this.activeFiresLayer = null;
         this.smokeForecastLayer = null;
@@ -36,6 +36,8 @@ class Map extends React.PureComponent {
 
     initMap(){
 
+        loadCss();
+
         loadModules([
             "esri/views/MapView",
             "esri/WebMap"
@@ -45,6 +47,8 @@ class Map extends React.PureComponent {
 
             const initMapExt = this.parsePredefineExtent();
 
+            const container = this.mapContainerRef.current;
+
             this.mapView = new MapView({
                 map: new WebMap({
                     portalItem: { 
@@ -52,7 +56,7 @@ class Map extends React.PureComponent {
                     }
                 }),
                 extent: initMapExt,
-                container: CONTAINER_ID,
+                container,
                 padding: {
                     right: this.props.rightPadding || 0
                 }
@@ -392,14 +396,19 @@ class Map extends React.PureComponent {
 
     render(){
         return(
-            <div>
-                <div id={CONTAINER_ID} style={{
-                    position: 'absolute',
-                    top: 0,
-                    bottom: 0,
-                    left: 0,
-                    right: 0
+            <div style={{
+                position: 'absolute',
+                top: 0,
+                bottom: 0,
+                left: 0,
+                right: 0,
+                overflowY: "hidden"
+            }}>
+                <div ref={this.mapContainerRef} style={{
+                    height: '100%',
+                    bottom: '100%'
                 }}></div>
+
                 <InfoWindow 
                     position={this.state.infoWindowPostion}
                     data={this.props.infoWindowData}
