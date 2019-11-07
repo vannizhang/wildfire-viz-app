@@ -3,6 +3,20 @@
 // /* load esri styles for version 4.10 via import in main scss file */
 // @import url('https://js.arcgis.com/4.10/esri/css/main.css');
 
+html, body {
+    padding: 0;
+    margin: 0;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+}
+
+#appRootDiv, .main-content {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
 .side-bar {
     position: absolute;
     top: 0;
