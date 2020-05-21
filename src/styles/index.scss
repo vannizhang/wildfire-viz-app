@@ -1,0 +1,32 @@
+@import '~calcite-web/dist/css/calcite-web.min.css';
+
+// customize style for ArcGIS JS API Popup Window
+#root {
+    .esri-popup{
+        .esri-widget {
+            background-color: transparent;
+            color: rgb(209, 136, 2);
+
+            a {
+                color: rgb(209, 136, 2);
+            }
+        }
+
+        .esri-popup__main-container,
+        .esri-popup__pointer-direction,
+        .esri-popup__navigation { 
+            background-color: rgba(26,0,17,1);
+            color: rgb(209, 136, 2);
+        }
+
+        .esri-popup__header-title:hover,
+        .esri-popup__button:hover {
+            background-color: rgba(26,0,17,.5);
+        }
+
+    }
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
