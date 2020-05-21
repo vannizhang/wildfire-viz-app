@@ -9,7 +9,23 @@ import {
     StoreGetState
 } from '../configureStore';
 
-export type WildfireFeatureFieldName = 'OBJECTID' | 'IrwinID' | 'GlobalID' | 'UniqueFireIdentifier' | 'IncidentName' | 'IncidentTypeCategory' | 'DiscoveryAcres' | 'DailyAcres' | 'CalculatedAcres' | 'FinalAcres' | 'PercentContained' | 'FireDiscoveryDateTime' | 'POOCounty' | 'POOState' | 'FireCause'
+export enum WildfireFeatureFields {
+    OBJECTID = 'OBJECTID',
+    IrwinID = 'IrwinID',
+    GlobalID = 'GlobalID',
+    UniqueFireIdentifier = 'UniqueFireIdentifier',
+    IncidentName = 'IncidentName',
+    IncidentTypeCategory = 'IncidentTypeCategory',
+    DiscoveryAcres = 'DiscoveryAcres',
+    DailyAcres = 'DailyAcres',
+    CalculatedAcres = 'CalculatedAcres',
+    FinalAcres = 'FinalAcres',
+    PercentContained = 'PercentContained',
+    FireDiscoveryDateTime = 'FireDiscoveryDateTime',
+    POOCounty = 'POOCounty',
+    POOState = 'POOState',
+    FireCause = 'FireCause'
+};
 
 export interface WildfireFeature {
     attributes: {

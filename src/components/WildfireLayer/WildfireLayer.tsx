@@ -13,7 +13,7 @@ import ILabelClass from 'esri/layers/support/LabelClass';
 import ITextSymbol from 'esri/symbols/TextSymbol';
 
 import { 
-    WildfireFeatureFieldName,
+    WildfireFeatureFields,
     WildfireFeature
 } from '../../store/reducers/wildfires';
 
@@ -91,58 +91,52 @@ const WildfireLayer:React.FC<Props> = ({
 
     const getPopupTemplate = async()=>{
 
-        // type Modules = [
-        //     typeof IFieldInfo
-        // ]; 
+        type Modules = [
+            typeof IFieldInfo
+        ]; 
 
-        // const [
-        //     FieldInfo,
-        // ] = await (loadModules([
-        //     'esri/popup/FieldInfo'
-        // ]) as Promise<Modules>);
+        const [
+            FieldInfo,
+        ] = await (loadModules([
+            'esri/popup/FieldInfo'
+        ]) as Promise<Modules>);
 
-        const discoveryDateField:WildfireFeatureFieldName = 'FireDiscoveryDateTime';
-        const fireNameField:WildfireFeatureFieldName = 'IncidentName';
-        const stateField:WildfireFeatureFieldName = 'POOState';
-        const dailyAcresField:WildfireFeatureFieldName = 'DailyAcres';
-        const pctContainedField:WildfireFeatureFieldName = 'PercentContained';
-
-        const title = `Start Date: <b>{${discoveryDateField}}</b>`;
+        const title = `Start Date: <b>{${WildfireFeatureFields.FireDiscoveryDateTime}}</b>`;
         const content = `
             <div>
-                The <b>{${fireNameField}} fire</b> in {${stateField}} is
-                estimated to be <b>{${dailyAcresField}} acres</b>
-                and <b>{${pctContainedField}}%</b> contained
+                The <b>{${WildfireFeatureFields.IncidentName}} fire</b> in {${WildfireFeatureFields.POOState}} is
+                estimated to be <b>{${WildfireFeatureFields.DailyAcres}} acres</b>
+                and <b>{${WildfireFeatureFields.PercentContained}}%</b> contained
             </div>
 
             <div class='leader-half'>
-                <a href='https://news.google.com/search?q={${fireNameField}} fire' class='margin-right-half' target='_blank'>News</a>
-                <a href='https://twitter.com/search?q={${fireNameField}} fire' class='margin-right-half' target='_blank'>Twitter</a>
-                <a href='https://www.facebook.com/search/top/?q={${fireNameField}} fire' target='_blank'>Facebook</a>
+                <a href='https://news.google.com/search?q={${WildfireFeatureFields.IncidentName}} fire' class='margin-right-half' target='_blank'>News</a>
+                <a href='https://twitter.com/search?q={${WildfireFeatureFields.IncidentName}} fire' class='margin-right-half' target='_blank'>Twitter</a>
+                <a href='https://www.facebook.com/search/top/?q={${WildfireFeatureFields.IncidentName}} fire' target='_blank'>Facebook</a>
             </div>
         `;
         //.trim().replace(/(\r\n|\n|\r)/gm, "");
 
-        // const fieldInfos:IFieldInfo[] = [
-        //     new FieldInfo({
-        //         fieldName: discoveryDateField,
-        //         format: {
-        //             dateFormat: 'short-date-short-time'
-        //         }
-        //     }),
-        //     new FieldInfo({
-        //         fieldName: dailyAcresField,
-        //         format: {
-        //             places: 0,
-        //             digitSeparator: true
-        //         }
-        //     })
-        // ];
+        const fieldInfos:IFieldInfo[] = [
+            new FieldInfo({
+                fieldName: WildfireFeatureFields.FireDiscoveryDateTime,
+                format: {
+                    dateFormat: 'short-date-short-time'
+                }
+            }),
+            new FieldInfo({
+                fieldName: WildfireFeatureFields.DailyAcres,
+                format: {
+                    places: 0,
+                    digitSeparator: true
+                }
+            })
+        ];
 
         return {
             title,
             content,
-            // fieldInfos
+            fieldInfos
         }
     };
 
@@ -213,11 +207,9 @@ const WildfireLayer:React.FC<Props> = ({
             'esri/symbols/TextSymbol'
         ]) as Promise<Modules>);
 
-        const fireNameField:WildfireFeatureFieldName = 'IncidentName';
-
         return new LabelClass({
             labelExpressionInfo: { 
-                expression: `$feature.${fireNameField}`
+                expression: `$feature.${WildfireFeatureFields.IncidentName}`
             },
             symbol: new TextSymbol({
                 color: "#d18802 ",
@@ -236,12 +228,12 @@ const WildfireLayer:React.FC<Props> = ({
 
     const queryVisibleFeatures = async ()=>{
 
-        const uniqueIdField:WildfireFeatureFieldName = 'UniqueFireIdentifier';
+        const uniqueIdField = WildfireFeatureFields.UniqueFireIdentifier;
 
         const { features } = await wildfireLayer.queryFeatures({
             geometry: mapView.extent,
             where: definitionExpression,
-            outFields: [uniqueIdField],
+            outFields: [ uniqueIdField ],
             returnGeometry: false
         });
 

@@ -1,14 +1,6 @@
 import aixos from 'axios';
 import { add, isAfter } from 'date-fns';
 
-// import {
-//     WildfireFeatureFieldName
-// } from '../store/reducers/wildfires';
-
-// import {
-//     MapConfig
-// } from '../AppConfig';
-
 interface GenerateRendererOptions {
     url: string;
     classificationField: string;
