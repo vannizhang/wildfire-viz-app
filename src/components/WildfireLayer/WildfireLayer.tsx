@@ -114,8 +114,7 @@ const WildfireLayer:React.FC<Props> = ({
                 <a href='https://twitter.com/search?q={${WildfireFeatureFields.IncidentName}} fire' class='margin-right-half' target='_blank'>Twitter</a>
                 <a href='https://www.facebook.com/search/top/?q={${WildfireFeatureFields.IncidentName}} fire' target='_blank'>Facebook</a>
             </div>
-        `;
-        //.trim().replace(/(\r\n|\n|\r)/gm, "");
+        `.trim().replace(/(\r\n|\n|\r)/gm, "");
 
         const fieldInfos:IFieldInfo[] = [
             new FieldInfo({
@@ -136,7 +135,8 @@ const WildfireLayer:React.FC<Props> = ({
         return {
             title,
             content,
-            fieldInfos
+            fieldInfos,
+            outFields: ["*"]
         }
     };
 
