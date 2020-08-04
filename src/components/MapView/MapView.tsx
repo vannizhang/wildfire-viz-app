@@ -4,6 +4,7 @@ import { loadModules, loadCss } from 'esri-loader';
 import IMapView from 'esri/views/MapView';
 import IWebMap from "esri/WebMap";
 import IwatchUtils from 'esri/core/watchUtils';
+import IFeatureLayer from 'esri/layers/FeatureLayer'
 
 export interface CenterLoaction {
     lat: number;
@@ -113,6 +114,15 @@ const MapView:React.FC<Props> = ({
         }
     };
 
+    const addDefExpToVIIRSLayers = ()=>{
+        const VIIRSLayers = mapView.map.allLayers
+            .filter(d=>d.title.includes('VIIRS'));
+        
+        VIIRSLayers.forEach((layer:IFeatureLayer)=>{
+            layer.definitionExpression = `esritimeutc >=  CURRENT_TIMESTAMP - INTERVAL '48' HOUR`
+        });
+    }
+
     React.useEffect(()=>{
         loadCss();
         initMapView();
@@ -121,6 +131,7 @@ const MapView:React.FC<Props> = ({
     React.useEffect(()=>{
         if(mapView){
             addWatchEvent();
+            addDefExpToVIIRSLayers();
         }
     }, [ mapView ]);
 

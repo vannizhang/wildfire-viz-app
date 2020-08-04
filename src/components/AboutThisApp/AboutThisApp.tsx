@@ -33,10 +33,17 @@ const AboutThisApp:React.FC = ()=>{
                 </span>
             
                 <h3 className='trailer-half avenir-demi'>About this app</h3>
-                <p>This map presents active wildfires in the United States. The source for the locations is Integrated Reporting of Wildland-Fire Information (IRWIN) location database along with the polygon perimeters from the National Interagency Fire Center (NIFC). Both layers update every 15 minutes. Smoke forecasts are disseminated by the National Weather Service and are shown here in 1-hour increments 24 hours out. More information about this service can be found <a href='https://www.arcgis.com/home/item.html?id=8e6cddf31bde4f4095a4b0ef32fef144' target='_blank'>here</a>.</p> 
 
-                <p>Fires are sorted by burn size (in the grid view) or age (in the timeline view). This application is an unofficial presentation of this data and is intended for reference only. It was designed by Esri’s <a href='https://github.com/vannizhang' target='_blank'>Jinnan Zhang</a> and <a href='https://adventuresinmapping.com/' target='_blank'>John Nelson</a>, using Firefly symbology available in <a href='https://www.esri.com/arcgis-blog/products/arcgis-living-atlas/mapping/whats-new-in-arcgis-online-firefly/' target='_blank'>ArcGIS Online</a> and <a href='https://www.esri.com/arcgis-blog/products/arcgis-pro/mapping/steal-this-firefly-style-please/' target='_blank'>ArcGIS Pro</a>, and the <a href='https://livingatlas.arcgis.com/en/browse/#d=1&q=%22World%20Imagery%20(Firefly)%22' target='_blank'>Firefly basemap</a>.</p>
-            
+                <p>This map presents active wildfires in the United States. Fires are sorted by burn size (in the grid view) or age (in the timeline view).</p>
+
+                <p>The fires source is the Integrated Reporting of Wildland-Fire Information (IRWIN) location database along with the polygon perimeters from the National Interagency Fire Center (NIFC). Both layers update every 15 minutes.</p>
+
+                <p>Smoke forecasts are disseminated by the National Weather Service and show a 48-hour forecast window in 1-hour increments. More information about this service can be found <a href='https://www.arcgis.com/home/item.html?id=a98fd08751a5480c898b7cebe38807f4' target='_blank'>here</a>.</p>
+
+                <p>When zoomed-in, additional fire points will appear. These are NOAA/NASA satellite-detected locations of recent “thermal activity” that can provide an indication of fire direction. Learn more about this data <a href='https://www.arcgis.com/home/item.html?id=dece90af1a0242dcbf0ca36d30276aa3' target='_blank'>here</a>.</p>
+
+                <p>This application is an unofficial presentation of this data and is intended for reference only. It was designed by Esri’s <a href='https://github.com/vannizhang' target='_blank'>Jinnan Zhang</a> and <a href='https://adventuresinmapping.com/' target='_blank'>John Nelson</a>, using Firefly symbology available in <a href='https://www.esri.com/arcgis-blog/products/arcgis-living-atlas/mapping/whats-new-in-arcgis-online-firefly/' target='_blank'>ArcGIS Online</a> and <a href='https://www.esri.com/arcgis-blog/products/arcgis-pro/mapping/steal-this-firefly-style-please/' target='_blank'>ArcGIS Pro</a>, and the <a href='https://livingatlas.arcgis.com/en/browse/#d=1&q=%22World%20Imagery%20(Firefly)%22' target='_blank'>Firefly basemap</a>.</p>
+
                 <div className="text-right">
                     <button className="btn btn-transparent js-modal-toggle">Close</button>
                 </div>
