@@ -11,6 +11,7 @@ import IGraphic from 'esri/Graphic';
 import IFieldInfo from 'esri/popup/FieldInfo';
 import ILabelClass from 'esri/layers/support/LabelClass';
 import ITextSymbol from 'esri/symbols/TextSymbol';
+import IExpressionInfo from 'esri/popup/ExpressionInfo'
 
 import { 
     WildfireFeatureFields,
@@ -24,7 +25,11 @@ import {
 import {
     foregroundSymbols,
     backgroundSymbols
-} from './FireflySymbolsLookup'
+} from './FireflySymbolsLookup';
+
+import {
+    stringFns
+} from 'helper-toolkit-ts';
 
 interface Props {
     url: string;
@@ -92,13 +97,16 @@ const WildfireLayer:React.FC<Props> = ({
     const getPopupTemplate = async()=>{
 
         type Modules = [
-            typeof IFieldInfo
+            typeof IFieldInfo,
+            typeof IExpressionInfo
         ]; 
 
         const [
             FieldInfo,
+            ExpressionInfo
         ] = await (loadModules([
-            'esri/popup/FieldInfo'
+            'esri/popup/FieldInfo',
+            'esri/popup/ExpressionInfo'
         ]) as Promise<Modules>);
 
         const title = `Start Date: <b>{${WildfireFeatureFields.FireDiscoveryDateTime}}</b>`;
@@ -111,7 +119,7 @@ const WildfireLayer:React.FC<Props> = ({
 
             <div class='leader-half'>
                 <a href='https://news.google.com/search?q={${WildfireFeatureFields.IncidentName}} fire' class='margin-right-half' target='_blank'>News</a>
-                <a href='https://twitter.com/search?q={${WildfireFeatureFields.IncidentName}} fire' class='margin-right-half' target='_blank'>Twitter</a>
+                <a href='https://twitter.com/search?q={expression/IncidentNameNoSpace}Fire' class='margin-right-half' target='_blank'>Twitter</a>
                 <a href='https://www.facebook.com/search/top/?q={${WildfireFeatureFields.IncidentName}} fire' target='_blank'>Facebook</a>
             </div>
         `.trim().replace(/(\r\n|\n|\r)/gm, "");
@@ -132,10 +140,18 @@ const WildfireLayer:React.FC<Props> = ({
             })
         ];
 
+        const expressionInfos:IExpressionInfo[] = [
+            new ExpressionInfo({
+                name: "IncidentNameNoSpace",
+                expression: `Replace($feature.${WildfireFeatureFields.IncidentName}, ' ', '')`
+            })
+        ];
+
         return {
             title,
             content,
             fieldInfos,
+            expressionInfos,
             outFields: ["*"]
         }
     };
