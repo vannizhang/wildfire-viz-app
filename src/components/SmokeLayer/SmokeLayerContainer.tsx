@@ -42,11 +42,20 @@ const SmokeLayerContainer:React.FC<Props> = ({
     const TimerSpeed = 2000;
 
     const getLayerInfo = async()=>{
-        const requestUrl = `${url}/0?f=json`
-        const { data }: {data: LayerInfo} = await axios.get(requestUrl);
-        const { timeInfo } = data;
-        
-        setFullTimeExtent(timeInfo.timeExtent);
+
+        try {
+            const requestUrl = `${url}/0?f=json`
+            const { data }: {data: LayerInfo} = await axios.get(requestUrl);
+
+            if(data){
+                const { timeInfo } = data;
+                setFullTimeExtent(timeInfo.timeExtent);
+            }
+
+        } catch(err){
+            console.error(err);
+        }
+
     };
 
     React.useEffect(()=>{
