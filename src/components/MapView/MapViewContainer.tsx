@@ -21,7 +21,7 @@ const MapViewContainer: React.FC = ()=>{
         const { mapCenterLocation } = SearchParamKeys;
         const { lon, lat, zoom } = location;
 
-        urlFns.updateQueryParam({
+        urlFns.updateHashParam({
             key: mapCenterLocation,
             value: `${lon},${lat},${zoom}`
         });
@@ -29,7 +29,7 @@ const MapViewContainer: React.FC = ()=>{
 
     const parseMapCenterLocationFromUrl = ()=>{
         const { mapCenterLocation } = SearchParamKeys;
-        const searchParams = urlFns.parseQuery();
+        const searchParams = urlFns.parseHash();
 
         const values: number[] = searchParams[mapCenterLocation]
             ? searchParams[mapCenterLocation]
