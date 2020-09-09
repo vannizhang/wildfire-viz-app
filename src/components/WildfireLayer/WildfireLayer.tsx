@@ -79,7 +79,8 @@ const WildfireLayer:React.FC<Props> = ({
             definitionExpression,
             renderer: rendererForeground,
             popupTemplate,
-            labelingInfo: [ labelClass ]
+            labelingInfo: [ labelClass ],
+            outFields: ['*']
         });
 
         const wildfireBackgroundLayer = new FeatureLayer({
@@ -91,12 +92,8 @@ const WildfireLayer:React.FC<Props> = ({
         });
 
         mapView.map.addMany([ wildfireBackgroundLayer, wildfireLayer ]);
-
-        mapView.whenLayerView(wildfireLayer).then(layerView=>{
-            // console.log(layerView)
-            setWildfireLayer(wildfireLayer);
-            layerViewRef.current = layerView;
-        })
+        
+        setWildfireLayer(wildfireLayer);
     };
 
     const getPopupTemplate = async()=>{
@@ -310,23 +307,14 @@ const WildfireLayer:React.FC<Props> = ({
     }
 
     const addWatchEvent = async()=>{
-        type Modules = [typeof IwatchUtils];
+        const layerView = await mapView.whenLayerView(wildfireLayer);
+        layerViewRef.current = layerView;
 
-        try {
-            const [ 
-                watchUtils 
-            ] = await (loadModules([
-                'esri/core/watchUtils'
-            ]) as Promise<Modules>);
-
-            watchUtils.whenTrue(mapView, 'stationary', ()=>{
-                // console.log('mapview is stationary', mapView.center, mapView.zoom);
+        layerView.watch("updating",  (isUpdating:boolean)=>{
+            if(!isUpdating) {
                 queryVisibleFeatures();
-            });
-
-        } catch(err){   
-            console.error(err);
-        }
+            }
+        })
     };
 
     React.useEffect(()=>{
