@@ -37,10 +37,10 @@ const AppContainer:React.FC = ()=>{
             where: definitionExpression,
             classificationField: WildfireLayerClassificationField,
         });
-        // console.log(classbreakRenderer);
+        console.log(classbreakRenderer);
 
         const wildfires = await fecthWildfires();
-        // console.log(wildfires);
+        console.log(wildfires);
 
         const formattedWildfires = assignClassBreak2WildfireFeatures(wildfires, classbreakRenderer);
         // console.log(formattedWildfires);

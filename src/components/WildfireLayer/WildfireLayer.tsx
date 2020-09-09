@@ -11,7 +11,8 @@ import IGraphic from 'esri/Graphic';
 import IFieldInfo from 'esri/popup/FieldInfo';
 import ILabelClass from 'esri/layers/support/LabelClass';
 import ITextSymbol from 'esri/symbols/TextSymbol';
-import IExpressionInfo from 'esri/popup/ExpressionInfo'
+import IExpressionInfo from 'esri/popup/ExpressionInfo';
+import IFeatureLayerView from 'esri/views/layers/FeatureLayerView';
 
 import { 
     WildfireFeatureFields,
@@ -53,6 +54,8 @@ const WildfireLayer:React.FC<Props> = ({
 
     const [ wildfireLayer, setWildfireLayer ] = React.useState<IFeatureLayer>();
 
+    const layerViewRef = React.useRef<IFeatureLayerView>();
+
     const init = async()=>{
 
         type Modules = [
@@ -89,8 +92,10 @@ const WildfireLayer:React.FC<Props> = ({
 
         mapView.map.addMany([ wildfireBackgroundLayer, wildfireLayer ]);
 
-        wildfireLayer.when(()=>{
+        mapView.whenLayerView(wildfireLayer).then(layerView=>{
+            // console.log(layerView)
             setWildfireLayer(wildfireLayer);
+            layerViewRef.current = layerView;
         })
     };
 
@@ -246,7 +251,7 @@ const WildfireLayer:React.FC<Props> = ({
 
         const uniqueIdField = WildfireFeatureFields.UniqueFireIdentifier;
 
-        const { features } = await wildfireLayer.queryFeatures({
+        const { features } = await layerViewRef.current.queryFeatures({
             geometry: mapView.extent,
             where: definitionExpression,
             outFields: [ uniqueIdField ],

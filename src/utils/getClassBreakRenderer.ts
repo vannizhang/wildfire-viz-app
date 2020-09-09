@@ -66,31 +66,33 @@ export const getClassBreakRenderer = async({
     where = '1=1'
 }:GenerateRendererOptions): Promise<GenerateRendererResponse>=>{
 
-    const cachedData = getRendererFromLocalStorage();
+    // const cachedData = getRendererFromLocalStorage();
 
-    if(cachedData){
-        return cachedData;
-    }
+    // if(cachedData){
+    //     return cachedData;
+    // }
 
-    const requestUrl = url + '/generateRenderer';
+    // const requestUrl = url + '/generateRenderer';
 
-    const response = await aixos.get(requestUrl, {
-        params: {
-            classificationDef: {
-                type:"classBreaksDef",
-                breakCount,
-                classificationField,
-                classificationMethod: "esriClassifyNaturalBreaks"
-            },
-            where,
-            f: 'json'
-        }
-    });
+    // const response = await aixos.get(requestUrl, {
+    //     params: {
+    //         classificationDef: {
+    //             type:"classBreaksDef",
+    //             breakCount,
+    //             classificationField,
+    //             classificationMethod: "esriClassifyNaturalBreaks"
+    //         },
+    //         where,
+    //         f: 'json'
+    //     }
+    // });
 
-    const data:GenerateRendererResponse = response.data;
-    // console.log(data);
+    // const data:GenerateRendererResponse = response.data;
+    // // console.log(data);
 
-    save2LocalStorage(data);
+    // save2LocalStorage(data);
+
+    const data = {"type":"classBreaks","field":"DailyAcres", "defaultLabel":"","minValue":0.1,"classBreakInfos":[{"classMaxValue":6106,"label":"0.1 - 6106","description":""},{"classMaxValue":20899,"label":"6106 - 20899","description":""},{"classMaxValue":60641,"label":"20899 - 60641","description":""},{"classMaxValue":139007,"label":"60641 - 139007","description":""},{"classMaxValue":396624,"label":"139007 - 396624","description":""}]}
 
     return data;
 }
