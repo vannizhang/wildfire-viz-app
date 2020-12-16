@@ -53,8 +53,9 @@ const SmokeLayer:React.FC<Props> = ({
                 visible,
                 // timeExtent,
                 useViewTime: false,
-                opacity: .5
-            });
+                opacity: 1,
+                effect: "invert() blur(5px) drop-shadow(10px, 10px, 20px, black) opacity(0.5)"
+            } as any);
 
             mapView.map.add(smokeLayer, 0);
 
