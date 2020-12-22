@@ -33,11 +33,15 @@ const SmokeLayerContainer:React.FC<Props> = ({
 
     const dispatch = useDispatch()
 
-    const [ FullTimeExtent, setFullTimeExtent ] = React.useState<number[]>();
-
+    // const [ FullTimeExtent, setFullTimeExtent ] = React.useState<number[]>();
+    
     const [ activeTimeExtent, setActiveTimeExtent ]= React.useState<number[]>();
 
-    const [ timer, setTimer] = React.useState<number>();
+    const fullTimeExtentRef = React.useRef<number[]>([]);
+
+    const animationIntervalRef = React.useRef<number>();
+
+    const startTimeRef = React.useRef<number>();
 
     const TimerSpeed = 2000;
 
@@ -49,7 +53,9 @@ const SmokeLayerContainer:React.FC<Props> = ({
 
             if(data){
                 const { timeInfo } = data;
-                setFullTimeExtent(timeInfo.timeExtent);
+                // setFullTimeExtent(timeInfo.timeExtent);
+
+                fullTimeExtentRef.current = timeInfo.timeExtent
             }
 
         } catch(err){
@@ -62,7 +68,7 @@ const SmokeLayerContainer:React.FC<Props> = ({
         getLayerInfo();
 
         return () => {
-            clearInterval(timer);
+            clearInterval(animationIntervalRef.current);
         };
 
     }, []);
@@ -70,32 +76,32 @@ const SmokeLayerContainer:React.FC<Props> = ({
     React.useEffect(()=>{
         if(isVisible){
 
-            const timer = setInterval(() => {
+            animationIntervalRef.current = setInterval(() => {
 
-                setActiveTimeExtent(activeTimeExtent => {
-                    const [ LayerTimeExtentStart, LayerTimeExtentEnd ] = FullTimeExtent;
-                    const [ startTime, endTime ] = activeTimeExtent || [ undefined, undefined ];
+                const [ LayerTimeExtentStart, LayerTimeExtentEnd ] = fullTimeExtentRef.current;
+                // const [ startTime, endTime ] = activeTimeExtent || [ undefined, undefined ];
 
-                    let newStartTime = startTime ? add(new Date(startTime), { hours: 1 }).getTime() : LayerTimeExtentStart;
-                            
-                    if(newStartTime > LayerTimeExtentEnd){
-                        newStartTime = LayerTimeExtentStart;
-                    };
+                startTimeRef.current = startTimeRef.current 
+                    ? add(new Date(startTimeRef.current ), { hours: 1 }).getTime() 
+                    : LayerTimeExtentStart;
+                        
+                if(startTimeRef.current > LayerTimeExtentEnd){
+                    startTimeRef.current = LayerTimeExtentStart;
+                };
 
-                    const newEndTime = add(new Date(newStartTime), { hours: 1 }).getTime();
+                const newEndTime = add(new Date(startTimeRef.current), { hours: 1 }).getTime();
 
-                    return [
-                        newStartTime,
-                        newEndTime
-                    ];
-                });
+                setActiveTimeExtent([startTimeRef.current, newEndTime]);
 
             }, TimerSpeed)
 
-            setTimer(timer);
       
         } else {
-            clearInterval(timer);
+            clearInterval(animationIntervalRef.current);
+
+            setActiveTimeExtent(null);
+
+            startTimeRef.current = null;
         }
 
     }, [isVisible]);
