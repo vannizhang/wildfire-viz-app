@@ -1,3 +1,1 @@
-declare module '*.jpg';
-declare module '*.png';
-declare module '*.svg';
+export type HashParamKey = '@' | 'smokeForecast';

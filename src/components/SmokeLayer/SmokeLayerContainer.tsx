@@ -12,6 +12,9 @@ import {
     smokeLayerCurrentTimeExtentChanged
 } from  '../../store/reducers/map'
 
+import { urlFns } from 'helper-toolkit-ts';
+import { HashParamKey } from '../../types';
+
 interface Props {
     mapView?: IMapView
 }
@@ -74,6 +77,7 @@ const SmokeLayerContainer:React.FC<Props> = ({
     }, []);
 
     React.useEffect(()=>{
+        
         if(isVisible){
 
             animationIntervalRef.current = setInterval(() => {
@@ -103,6 +107,14 @@ const SmokeLayerContainer:React.FC<Props> = ({
 
             startTimeRef.current = null;
         }
+
+
+        const key:HashParamKey = 'smokeForecast'
+
+        urlFns.updateHashParam({
+            key,
+            value: isVisible ? '1' : '0'
+        });
 
     }, [isVisible]);
 

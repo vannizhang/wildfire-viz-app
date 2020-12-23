@@ -10,6 +10,10 @@ import {
 import { MapConfig, UIConfig, SearchParamKeys } from '../../AppConfig';
 
 import {
+    HashParamKey
+} from '../../types'
+
+import {
     CenterLoaction
 } from './MapView';
 
@@ -18,21 +22,23 @@ const { WebmapId } = MapConfig;
 const MapViewContainer: React.FC = ()=>{
 
     const saveMapCenterLocationInUrl = (location:CenterLoaction)=>{
-        const { mapCenterLocation } = SearchParamKeys;
+        // const { mapCenterLocation } = SearchParamKeys;
+        const key:HashParamKey = '@'
         const { lon, lat, zoom } = location;
 
         urlFns.updateHashParam({
-            key: mapCenterLocation,
+            key,
             value: `${lon},${lat},${zoom}`
         });
     };
 
     const parseMapCenterLocationFromUrl = ()=>{
-        const { mapCenterLocation } = SearchParamKeys;
-        const searchParams = urlFns.parseHash();
+        // const { mapCenterLocation } = SearchParamKeys;
+        const key:HashParamKey = '@'
+        const hashParams = urlFns.parseHash();
 
-        const values: number[] = searchParams[mapCenterLocation]
-            ? searchParams[mapCenterLocation]
+        const values: number[] = hashParams[key]
+            ? hashParams[key]
                 .split(',')
                 .map((d:string)=>+d)
             : [];

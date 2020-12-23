@@ -12,6 +12,12 @@ import {
 import {
     GenerateRendererResponse
 } from '../../utils/getClassBreakRenderer';
+import { urlFns } from 'helper-toolkit-ts';
+import { HashParamKey } from '../../types';
+
+const dataFromHashParams:{
+    [key in HashParamKey]: string
+} = urlFns.parseHash();
 
 interface MapReducerInitialState {
     wildfireLayerClassbreakRenderer: GenerateRendererResponse;
@@ -38,7 +44,7 @@ const slice = createSlice({
     name: 'map',
     initialState: {
         wildfireLayerClassbreakRenderer: null,
-        smokeLayerVisible: false,
+        smokeLayerVisible: dataFromHashParams.smokeForecast && dataFromHashParams.smokeForecast === '1',
         smokeLayerCurrentTimeExtent: []
     } as MapReducerInitialState,
     reducers: {
