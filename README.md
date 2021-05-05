@@ -9,6 +9,37 @@ This app presents active wildfires in the United States. The source for the loca
 ## Features
 Fires are sorted by burn size (in the grid view) or age (in the timeline view). This application is an unofficial presentation of this data and is intended for reference only. 
 
+## Instructions
+
+- Before we begin, make sure you have a fresh version of [Node.js](https://nodejs.org/en/) and NPM installed. The current Long Term Support (LTS) release is an ideal starting point. 
+
+- To begin, fork this repository and clone the fork to your computer:
+
+    ```sh
+    https://github.com/vannizhang/wildfire-viz-app.git
+    ```
+
+- From the project's root directory, install the required packages (dependencies):
+
+    ```sh
+    npm install
+    ```
+
+ - Now you can start the webpack dev server to test the app on your local machine:
+
+    ```sh
+    # it will start a server instance and begin listening for connections from localhost on port 8080
+    npm run start
+    ```
+
+ - To build/deploye the app, you can simply run:
+
+    ```sh
+    # it will place all files needed for deployment into the /dist directory 
+    npm run build
+    ```
+
+
 ## Requirements
 
 - [ArcGIS API for JavaScript (version 4.11)](https://developers.arcgis.com/javascript/index.html)
