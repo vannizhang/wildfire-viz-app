@@ -4,6 +4,8 @@ import {
     PayloadAction
 } from '@reduxjs/toolkit';
 
+import { add } from 'date-fns';
+
 import {
     RootState,
     StoreDispatch,
@@ -19,6 +21,9 @@ import { HashParamKey } from '../../types';
 // const dataFromHashParams:{
 //     [key in HashParamKey]: string
 // } = urlFns.parseHash();
+
+let interval4smokeLayerAnimation: number;
+const SmokeLayerAnimationSpeed = 2000;
 
 interface MapReducerInitialState {
     wildfireLayerClassbreakRenderer: GenerateRendererResponse;
@@ -70,6 +75,38 @@ export const loadWildfireLayerRenderer = (data:GenerateRendererResponse)=>(dispa
     if(data){
         dispatch(wildfireLayerRendererLoaded(data));
     }
+};
+
+export const startSmokeLayerAnimation = ()=>(dispatch:StoreDispatch, getState:StoreGetState)=>{
+    interval4smokeLayerAnimation = setInterval(()=>{
+        dispatch(incSmokeLayerTimeExtent())
+    }, SmokeLayerAnimationSpeed)
+}
+
+export const stopSmokeLayerAnimation = ()=>(dispatch:StoreDispatch, getState:StoreGetState)=>{
+    clearInterval(interval4smokeLayerAnimation);
+}
+
+const incSmokeLayerTimeExtent = ()=>(dispatch:StoreDispatch, getState:StoreGetState)=>{
+
+    const { map } = getState();
+    const { smokeLayerFullTimeExtent, smokeLayerCurrentTimeExtent } = map;
+
+    const [ LayerTimeExtentStart, LayerTimeExtentEnd ] = smokeLayerFullTimeExtent;
+
+    let [ startTime ] = smokeLayerCurrentTimeExtent;
+
+    startTime = startTime
+        ? add(new Date(startTime), { hours: 1 }).getTime() 
+        : LayerTimeExtentStart;
+            
+    if(startTime > LayerTimeExtentEnd){
+        startTime = LayerTimeExtentStart;
+    };
+
+    const endTime = add(new Date(startTime), { hours: 1 }).getTime();
+
+    dispatch(smokeLayerCurrentTimeExtentChanged([startTime, endTime]))
 };
 
 export const wildfireLayerRendererSelector = createSelector(

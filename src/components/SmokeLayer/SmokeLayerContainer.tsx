@@ -10,8 +10,11 @@ import { MapConfig } from '../../AppConfig';
 import {
     smokeLayerVisibleSelector,
     smokeLayerFullTimeExtentSelector,
-    smokeLayerCurrentTimeExtentChanged,
-    smokeLayerFullTimeExtentChanged
+    smokeLayerCurrentTimeExtentSelector,
+    // smokeLayerCurrentTimeExtentChanged,
+    smokeLayerFullTimeExtentChanged,
+    startSmokeLayerAnimation,
+    stopSmokeLayerAnimation
 } from  '../../store/reducers/map'
 
 // import { urlFns } from 'helper-toolkit-ts';
@@ -40,15 +43,17 @@ const SmokeLayerContainer:React.FC<Props> = ({
 
     const fullTimeExtent = useSelector(smokeLayerFullTimeExtentSelector);
 
+    const currTimeExtent = useSelector(smokeLayerCurrentTimeExtentSelector);
+
     // const [ FullTimeExtent, setFullTimeExtent ] = React.useState<number[]>();
     
-    const [ activeTimeExtent, setActiveTimeExtent ]= React.useState<number[]>();
+    // const [ activeTimeExtent, setActiveTimeExtent ]= React.useState<number[]>();
 
-    const animationIntervalRef = React.useRef<number>();
+    // const animationIntervalRef = React.useRef<number>();
 
-    const startTimeRef = React.useRef<number>();
+    // const startTimeRef = React.useRef<number>();
 
-    const TimerSpeed = 2000;
+    // const TimerSpeed = 2000;
 
     const getLayerInfo = async()=>{
 
@@ -65,69 +70,36 @@ const SmokeLayerContainer:React.FC<Props> = ({
         } catch(err){
             console.error(err);
         }
-
     };
 
     React.useEffect(()=>{
         getLayerInfo();
 
         return () => {
-            clearInterval(animationIntervalRef.current);
+            dispatch(stopSmokeLayerAnimation());
         };
     }, []);
 
     React.useEffect(()=>{
         
         if(isVisible && fullTimeExtent.length){
-
-            animationIntervalRef.current = setInterval(() => {
-
-                const [ LayerTimeExtentStart, LayerTimeExtentEnd ] = fullTimeExtent;
-                // const [ startTime, endTime ] = activeTimeExtent || [ undefined, undefined ];
-
-                startTimeRef.current = startTimeRef.current 
-                    ? add(new Date(startTimeRef.current ), { hours: 1 }).getTime() 
-                    : LayerTimeExtentStart;
-                        
-                if(startTimeRef.current > LayerTimeExtentEnd){
-                    startTimeRef.current = LayerTimeExtentStart;
-                };
-
-                const newEndTime = add(new Date(startTimeRef.current), { hours: 1 }).getTime();
-
-                setActiveTimeExtent([startTimeRef.current, newEndTime]);
-
-            }, TimerSpeed)
-
-      
+            dispatch(startSmokeLayerAnimation())
         } else {
-            clearInterval(animationIntervalRef.current);
-
-            setActiveTimeExtent(null);
-
-            // startTimeRef.current = null;
+            dispatch(stopSmokeLayerAnimation());
         }
-
-
-        // const key:HashParamKey = 'smokeForecast'
-
-        // urlFns.updateHashParam({
-        //     key,
-        //     value: isVisible ? '1' : '0'
-        // });
 
     }, [isVisible, fullTimeExtent]);
 
-    React.useEffect(()=>{
-        // console.log('activeTimeExtent', activeTimeExtent)
-        dispatch(smokeLayerCurrentTimeExtentChanged(activeTimeExtent));
-    }, [activeTimeExtent])
+    // React.useEffect(()=>{
+    //     console.log('activeTimeExtent', currTimeExtent)
+    //     // dispatch(smokeLayerCurrentTimeExtentChanged(activeTimeExtent));
+    // }, [currTimeExtent])
 
     return (
         <SmokeLayer 
             url={LAYER_URL}
             visible={isVisible}
-            timeExtent={activeTimeExtent}
+            timeExtent={currTimeExtent.length ? currTimeExtent : null}
             mapView={mapView}
         />
     );
