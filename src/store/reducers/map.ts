@@ -1,6 +1,7 @@
 import { 
     createSlice,
-    createSelector
+    createSelector,
+    PayloadAction
 } from '@reduxjs/toolkit';
 
 import {
@@ -15,47 +16,37 @@ import {
 import { urlFns } from 'helper-toolkit-ts';
 import { HashParamKey } from '../../types';
 
-const dataFromHashParams:{
-    [key in HashParamKey]: string
-} = urlFns.parseHash();
+// const dataFromHashParams:{
+//     [key in HashParamKey]: string
+// } = urlFns.parseHash();
 
 interface MapReducerInitialState {
     wildfireLayerClassbreakRenderer: GenerateRendererResponse;
     smokeLayerVisible: boolean;
-    smokeLayerCurrentTimeExtent: number[]
+    smokeLayerCurrentTimeExtent: number[];
+    smokeLayerFullTimeExtent: number[]
 };
-
-interface WildfireLayerRendererLoadedAction {
-    type: string;
-    payload: GenerateRendererResponse;
-};
-
-interface SmokeLayerVisibleToggledAction {
-    type: string;
-    payload: null;
-}
-
-interface SmokeLayerCurrentTimeExtentChangedAction {
-    type: string;
-    payload: number[];
-}
 
 const slice = createSlice({
     name: 'map',
     initialState: {
         wildfireLayerClassbreakRenderer: null,
         smokeLayerVisible: false, //dataFromHashParams.smokeForecast && dataFromHashParams.smokeForecast === '1',
-        smokeLayerCurrentTimeExtent: []
+        smokeLayerCurrentTimeExtent: [],
+        smokeLayerFullTimeExtent: []
     } as MapReducerInitialState,
     reducers: {
-        wildfireLayerRendererLoaded: (state, action:WildfireLayerRendererLoadedAction)=>{
+        wildfireLayerRendererLoaded: (state, action:PayloadAction<GenerateRendererResponse>)=>{
             state.wildfireLayerClassbreakRenderer = action.payload;
         },
-        smokeLayerVisibleToggled: (state, action:SmokeLayerVisibleToggledAction)=>{
+        smokeLayerVisibleToggled: (state)=>{
             state.smokeLayerVisible = !state.smokeLayerVisible;
         },
-        smokeLayerCurrentTimeExtentChanged: (state, action:SmokeLayerCurrentTimeExtentChangedAction)=>{
+        smokeLayerCurrentTimeExtentChanged: (state, action:PayloadAction<number[]>)=>{
             state.smokeLayerCurrentTimeExtent = action.payload;
+        },
+        smokeLayerFullTimeExtentChanged: (state, action:PayloadAction<number[]>)=>{
+            state.smokeLayerFullTimeExtent = action.payload;
         }
     }
 });
@@ -71,7 +62,8 @@ const {
 
 export const { 
     smokeLayerVisibleToggled,
-    smokeLayerCurrentTimeExtentChanged
+    smokeLayerCurrentTimeExtentChanged,
+    smokeLayerFullTimeExtentChanged
 } = actions;
 
 export const loadWildfireLayerRenderer = (data:GenerateRendererResponse)=>(dispatch:StoreDispatch, getState:StoreGetState)=>{
@@ -93,6 +85,11 @@ export const smokeLayerVisibleSelector = createSelector(
 export const smokeLayerCurrentTimeExtentSelector = createSelector(
     (state:RootState)=>state.map.smokeLayerCurrentTimeExtent,
     smokeLayerCurrentTimeExtent=>smokeLayerCurrentTimeExtent
+);
+
+export const smokeLayerFullTimeExtentSelector = createSelector(
+    (state:RootState)=>state.map.smokeLayerFullTimeExtent,
+    smokeLayerFullTimeExtent=>smokeLayerFullTimeExtent
 );
 
 export default reducer;

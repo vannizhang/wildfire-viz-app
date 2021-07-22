@@ -9,7 +9,9 @@ import { MapConfig } from '../../AppConfig';
 
 import {
     smokeLayerVisibleSelector,
-    smokeLayerCurrentTimeExtentChanged
+    smokeLayerFullTimeExtentSelector,
+    smokeLayerCurrentTimeExtentChanged,
+    smokeLayerFullTimeExtentChanged
 } from  '../../store/reducers/map'
 
 // import { urlFns } from 'helper-toolkit-ts';
@@ -26,21 +28,21 @@ interface LayerInfo {
     }
 };
 
+const LAYER_URL = MapConfig.SmokeLayerUrl;
+
 const SmokeLayerContainer:React.FC<Props> = ({
     mapView
 })=>{
 
-    const url = MapConfig.SmokeLayerUrl;
+    const dispatch = useDispatch()
 
     const isVisible = useSelector(smokeLayerVisibleSelector);
 
-    const dispatch = useDispatch()
+    const fullTimeExtent = useSelector(smokeLayerFullTimeExtentSelector);
 
     // const [ FullTimeExtent, setFullTimeExtent ] = React.useState<number[]>();
     
     const [ activeTimeExtent, setActiveTimeExtent ]= React.useState<number[]>();
-
-    const fullTimeExtentRef = React.useRef<number[]>([]);
 
     const animationIntervalRef = React.useRef<number>();
 
@@ -51,14 +53,13 @@ const SmokeLayerContainer:React.FC<Props> = ({
     const getLayerInfo = async()=>{
 
         try {
-            const requestUrl = `${url}/0?f=json`
+            const requestUrl = `${LAYER_URL}/0?f=json`
             const { data }: {data: LayerInfo} = await axios.get(requestUrl);
 
             if(data){
                 const { timeInfo } = data;
-                // console.log(timeInfo.timeExtent);
 
-                fullTimeExtentRef.current = timeInfo.timeExtent
+                dispatch(smokeLayerFullTimeExtentChanged(timeInfo.timeExtent))
             }
 
         } catch(err){
@@ -73,16 +74,15 @@ const SmokeLayerContainer:React.FC<Props> = ({
         return () => {
             clearInterval(animationIntervalRef.current);
         };
-
     }, []);
 
     React.useEffect(()=>{
         
-        if(isVisible){
+        if(isVisible && fullTimeExtent.length){
 
             animationIntervalRef.current = setInterval(() => {
 
-                const [ LayerTimeExtentStart, LayerTimeExtentEnd ] = fullTimeExtentRef.current;
+                const [ LayerTimeExtentStart, LayerTimeExtentEnd ] = fullTimeExtent;
                 // const [ startTime, endTime ] = activeTimeExtent || [ undefined, undefined ];
 
                 startTimeRef.current = startTimeRef.current 
@@ -116,7 +116,7 @@ const SmokeLayerContainer:React.FC<Props> = ({
         //     value: isVisible ? '1' : '0'
         // });
 
-    }, [isVisible]);
+    }, [isVisible, fullTimeExtent]);
 
     React.useEffect(()=>{
         // console.log('activeTimeExtent', activeTimeExtent)
@@ -125,7 +125,7 @@ const SmokeLayerContainer:React.FC<Props> = ({
 
     return (
         <SmokeLayer 
-            url={url}
+            url={LAYER_URL}
             visible={isVisible}
             timeExtent={activeTimeExtent}
             mapView={mapView}
