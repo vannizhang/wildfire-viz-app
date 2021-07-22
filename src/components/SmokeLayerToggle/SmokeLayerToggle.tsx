@@ -32,15 +32,23 @@ const SmokeLayerToggle:React.FC<Props> = ({
 
     return (
         <div
-            className='cursor-pointer font-size--3'
             style={{
                 'padding': '.35rem 0'
             }}
-            onClick={onClick}
         >
-            { getCheckboxIcon() }
-            { getLabel() }
+            <div
+                className='cursor-pointer font-size--3'
+                onClick={onClick}
+            >
+                { getCheckboxIcon() }
+                { getLabel() }
+            </div>
+
+            <div>
+                
+            </div>
         </div>
+
     )
 };
 

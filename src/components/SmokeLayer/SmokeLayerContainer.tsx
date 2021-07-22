@@ -12,8 +12,8 @@ import {
     smokeLayerCurrentTimeExtentChanged
 } from  '../../store/reducers/map'
 
-import { urlFns } from 'helper-toolkit-ts';
-import { HashParamKey } from '../../types';
+// import { urlFns } from 'helper-toolkit-ts';
+// import { HashParamKey } from '../../types';
 
 interface Props {
     mapView?: IMapView
@@ -56,7 +56,7 @@ const SmokeLayerContainer:React.FC<Props> = ({
 
             if(data){
                 const { timeInfo } = data;
-                // setFullTimeExtent(timeInfo.timeExtent);
+                // console.log(timeInfo.timeExtent);
 
                 fullTimeExtentRef.current = timeInfo.timeExtent
             }
@@ -105,7 +105,7 @@ const SmokeLayerContainer:React.FC<Props> = ({
 
             setActiveTimeExtent(null);
 
-            startTimeRef.current = null;
+            // startTimeRef.current = null;
         }
 
 
