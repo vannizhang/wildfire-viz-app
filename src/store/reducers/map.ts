@@ -44,7 +44,7 @@ const slice = createSlice({
     name: 'map',
     initialState: {
         wildfireLayerClassbreakRenderer: null,
-        smokeLayerVisible: dataFromHashParams.smokeForecast && dataFromHashParams.smokeForecast === '1',
+        smokeLayerVisible: false, //dataFromHashParams.smokeForecast && dataFromHashParams.smokeForecast === '1',
         smokeLayerCurrentTimeExtent: []
     } as MapReducerInitialState,
     reducers: {

@@ -109,12 +109,12 @@ const SmokeLayerContainer:React.FC<Props> = ({
         }
 
 
-        const key:HashParamKey = 'smokeForecast'
+        // const key:HashParamKey = 'smokeForecast'
 
-        urlFns.updateHashParam({
-            key,
-            value: isVisible ? '1' : '0'
-        });
+        // urlFns.updateHashParam({
+        //     key,
+        //     value: isVisible ? '1' : '0'
+        // });
 
     }, [isVisible]);
 
