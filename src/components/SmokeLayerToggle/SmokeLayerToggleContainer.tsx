@@ -4,7 +4,11 @@ import { useDispatch, useSelector  } from 'react-redux';
 import {
     smokeLayerVisibleToggled,
     smokeLayerVisibleSelector,
-    smokeLayerCurrentTimeExtentSelector
+    smokeLayerCurrentTimeExtentSelector,
+    smokeLayerFullTimeExtentSelector,
+    isSmokeLayerAnimationSelector,
+    startSmokeLayerAnimation,
+    stopSmokeLayerAnimation
 } from  '../../store/reducers/map';
 
 import SmokeLayerToggle from './SmokeLayerToggle';
@@ -15,14 +19,27 @@ const SmokeLayerToggleContainer:React.FC = ()=>{
 
     const isVisible = useSelector(smokeLayerVisibleSelector);
 
+    const isAnimationOn = useSelector(isSmokeLayerAnimationSelector)
+
     const smokeLayerCurrentTimeExtent = useSelector(smokeLayerCurrentTimeExtentSelector);
+
+    const smokeLayerFullTimeExtent = useSelector(smokeLayerFullTimeExtentSelector);
 
     return (
         <SmokeLayerToggle 
             currentTime={smokeLayerCurrentTimeExtent?.[0]}
+            startTime={smokeLayerFullTimeExtent[0]}
             isVisible={isVisible}
+            isAnimationOn={isAnimationOn}
             onClick={()=>{
                 dispatch(smokeLayerVisibleToggled());
+            }}
+            playPauseBtnOnClick={()=>{
+                if(isAnimationOn){
+                    dispatch(stopSmokeLayerAnimation());
+                } else {
+                    dispatch(startSmokeLayerAnimation());
+                }
             }}
         />
     )

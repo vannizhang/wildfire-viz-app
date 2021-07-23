@@ -1,7 +1,7 @@
 import { 
     createSlice,
     createSelector,
-    PayloadAction
+    PayloadAction,
 } from '@reduxjs/toolkit';
 
 import { add } from 'date-fns';
@@ -15,8 +15,6 @@ import {
 import {
     GenerateRendererResponse
 } from '../../utils/getClassBreakRenderer';
-import { urlFns } from 'helper-toolkit-ts';
-import { HashParamKey } from '../../types';
 
 // const dataFromHashParams:{
 //     [key in HashParamKey]: string
@@ -29,7 +27,8 @@ interface MapReducerInitialState {
     wildfireLayerClassbreakRenderer: GenerateRendererResponse;
     smokeLayerVisible: boolean;
     smokeLayerCurrentTimeExtent: number[];
-    smokeLayerFullTimeExtent: number[]
+    smokeLayerFullTimeExtent: number[];
+    isSmokeLayerAnimation: boolean;
 };
 
 const slice = createSlice({
@@ -38,7 +37,8 @@ const slice = createSlice({
         wildfireLayerClassbreakRenderer: null,
         smokeLayerVisible: false, //dataFromHashParams.smokeForecast && dataFromHashParams.smokeForecast === '1',
         smokeLayerCurrentTimeExtent: [],
-        smokeLayerFullTimeExtent: []
+        smokeLayerFullTimeExtent: [],
+        isSmokeLayerAnimation: false
     } as MapReducerInitialState,
     reducers: {
         wildfireLayerRendererLoaded: (state, action:PayloadAction<GenerateRendererResponse>)=>{
@@ -52,6 +52,9 @@ const slice = createSlice({
         },
         smokeLayerFullTimeExtentChanged: (state, action:PayloadAction<number[]>)=>{
             state.smokeLayerFullTimeExtent = action.payload;
+        },
+        isSmokeLayerAnimationToggled: (state)=>{
+            state.isSmokeLayerAnimation = !state.isSmokeLayerAnimation;
         }
     }
 });
@@ -68,7 +71,8 @@ const {
 export const { 
     smokeLayerVisibleToggled,
     smokeLayerCurrentTimeExtentChanged,
-    smokeLayerFullTimeExtentChanged
+    smokeLayerFullTimeExtentChanged,
+    isSmokeLayerAnimationToggled
 } = actions;
 
 export const loadWildfireLayerRenderer = (data:GenerateRendererResponse)=>(dispatch:StoreDispatch, getState:StoreGetState)=>{
@@ -78,12 +82,15 @@ export const loadWildfireLayerRenderer = (data:GenerateRendererResponse)=>(dispa
 };
 
 export const startSmokeLayerAnimation = ()=>(dispatch:StoreDispatch, getState:StoreGetState)=>{
+    dispatch(isSmokeLayerAnimationToggled())
+
     interval4smokeLayerAnimation = setInterval(()=>{
         dispatch(incSmokeLayerTimeExtent())
     }, SmokeLayerAnimationSpeed)
 }
 
 export const stopSmokeLayerAnimation = ()=>(dispatch:StoreDispatch, getState:StoreGetState)=>{
+    dispatch(isSmokeLayerAnimationToggled())
     clearInterval(interval4smokeLayerAnimation);
 }
 
@@ -128,5 +135,11 @@ export const smokeLayerFullTimeExtentSelector = createSelector(
     (state:RootState)=>state.map.smokeLayerFullTimeExtent,
     smokeLayerFullTimeExtent=>smokeLayerFullTimeExtent
 );
+
+export const isSmokeLayerAnimationSelector = createSelector(
+    (state:RootState)=>state.map.isSmokeLayerAnimation,
+    isSmokeLayerAnimation=>isSmokeLayerAnimation
+);
+
 
 export default reducer;

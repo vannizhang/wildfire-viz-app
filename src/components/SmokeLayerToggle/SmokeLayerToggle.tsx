@@ -6,12 +6,19 @@ import classnames from 'classnames'
 interface Props {
     isVisible: boolean;
     currentTime: number;
+    // the start time of the smoke layer time extent, this is a constant val
+    startTime: number;
+    isAnimationOn: boolean;
     onClick: ()=>void;
+    playPauseBtnOnClick: ()=>void;
 }
 
 const SmokeLayerToggle:React.FC<Props> = ({
     isVisible,
     currentTime,
+    startTime,
+    isAnimationOn,
+    playPauseBtnOnClick,
     onClick
 })=>{
 
@@ -33,12 +40,18 @@ const SmokeLayerToggle:React.FC<Props> = ({
     };
 
     const getIndicators = ()=>{
+        // console.log(currentTime, startTime, currentTime - startTime)
+
+        const idx4CurrTime = currentTime && startTime 
+            ? (currentTime - startTime) / 3600000 
+            : 0
+
         const indicators:JSX.Element[] = [];
 
         for(let i = 0 ; i < 48; i++){
 
             const classname = classnames('smoke-forecast-time-indicator', {
-                'is-active': i === 0
+                'is-active': i === idx4CurrTime
             })
 
             const indicator = (
@@ -70,8 +83,9 @@ const SmokeLayerToggle:React.FC<Props> = ({
             >
                 <div
                     className='play-pause-btn'
+                    onClick={playPauseBtnOnClick}
                 >
-                    { pauseIcon }
+                    { isAnimationOn ? pauseIcon : playIcon }
                 </div>
 
                 <div
@@ -105,7 +119,7 @@ const SmokeLayerToggle:React.FC<Props> = ({
                 { getLabel() }
             </div>
 
-            { getIndicators() }
+            { isVisible ? getIndicators() : null }
         </div>
 
     )
