@@ -11,6 +11,7 @@ interface Props {
     isAnimationOn: boolean;
     onClick: ()=>void;
     playPauseBtnOnClick: ()=>void;
+    indicatorOnClick: (idx:number)=>void;
 }
 
 const SmokeLayerToggle:React.FC<Props> = ({
@@ -19,7 +20,8 @@ const SmokeLayerToggle:React.FC<Props> = ({
     startTime,
     isAnimationOn,
     playPauseBtnOnClick,
-    onClick
+    onClick,
+    indicatorOnClick
 })=>{
 
     const getCheckboxIcon = ()=>{
@@ -55,7 +57,7 @@ const SmokeLayerToggle:React.FC<Props> = ({
             })
 
             const indicator = (
-                <div className={classname} key={i}></div>
+                <div className={classname} key={i} onClick={indicatorOnClick.bind(this, i)}></div>
             )
 
             indicators.push(indicator)

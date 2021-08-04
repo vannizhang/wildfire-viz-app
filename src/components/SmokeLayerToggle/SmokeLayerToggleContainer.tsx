@@ -8,7 +8,8 @@ import {
     smokeLayerFullTimeExtentSelector,
     isSmokeLayerAnimationSelector,
     startSmokeLayerAnimation,
-    stopSmokeLayerAnimation
+    stopSmokeLayerAnimation,
+    setStartTimeByIdx
 } from  '../../store/reducers/map';
 
 import SmokeLayerToggle from './SmokeLayerToggle';
@@ -40,6 +41,10 @@ const SmokeLayerToggleContainer:React.FC = ()=>{
                 } else {
                     dispatch(startSmokeLayerAnimation());
                 }
+            }}
+            indicatorOnClick={(idx)=>{
+                // console.log(idx)
+                dispatch(setStartTimeByIdx(idx))
             }}
         />
     )

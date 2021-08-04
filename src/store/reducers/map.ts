@@ -94,6 +94,20 @@ export const stopSmokeLayerAnimation = ()=>(dispatch:StoreDispatch, getState:Sto
     clearInterval(interval4smokeLayerAnimation);
 }
 
+export const setStartTimeByIdx = (idx:number)=>(dispatch:StoreDispatch, getState:StoreGetState)=>{
+    const { map } = getState();
+    const { smokeLayerFullTimeExtent } = map;
+
+    const [ LayerTimeExtentStart ] = smokeLayerFullTimeExtent;
+
+    const startTime = add(new Date(LayerTimeExtentStart), { hours: idx }).getTime() 
+
+    const endTime = add(new Date(startTime), { hours: 1 }).getTime();
+
+    dispatch(smokeLayerCurrentTimeExtentChanged([startTime, endTime]))
+            
+}
+
 const incSmokeLayerTimeExtent = ()=>(dispatch:StoreDispatch, getState:StoreGetState)=>{
 
     const { map } = getState();
