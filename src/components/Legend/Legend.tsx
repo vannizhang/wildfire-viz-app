@@ -17,23 +17,23 @@ const LegendItem = styled.div`
 `;
 
 interface Props {
-   maxValues: number[] 
+   labels: string[] 
 };
 
 const Legend:React.FC<Props> = ({
-    maxValues
+    labels
 })=>{
 
     const getItems = ()=>{
 
-        return maxValues.map((val, index)=>{
+        return labels.map((val, index)=>{
             return (
                 <LegendItem key={`legend-item-${index}`}>
                     <FireflyIcon 
                         size={index}
                     />
                     <div className='font-size--3'>
-                        <span>{numberFns.abbreviateNumber(val)}</span>
+                        <span>{val}</span>
                     </div>
                 </LegendItem>
 

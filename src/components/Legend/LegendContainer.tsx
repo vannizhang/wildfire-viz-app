@@ -2,27 +2,29 @@ import * as React from 'react';
 import { useSelector  } from 'react-redux';
 import Legend from './Legend';
 
-import {
-    wildfireLayerRendererSelector
-} from '../../store/reducers/map';
+// import {
+//     wildfireLayerRendererSelector
+// } from '../../store/reducers/map';
+
+const Labels = ['<10','50','100','250', '650+']
 
 const LegendConatiner:React.FC= ()=>{
 
-    const renderer = useSelector(wildfireLayerRendererSelector);
+    // const renderer = useSelector(wildfireLayerRendererSelector);
 
-    const getMaxValues = ()=>{
-        if(!renderer){
-            return [];
-        }
+    // const getMaxValues = ()=>{
+    //     if(!renderer){
+    //         return [];
+    //     }
 
-        return renderer.classBreakInfos.map(d=>{
-            return d.classMaxValue
-        });
-    }
+    //     return Labels.map((d,i)=>{
+    //         return d.classMaxValue
+    //     });
+    // }
 
     return (
         <Legend 
-            maxValues={getMaxValues()}
+            labels={Labels}
         />
     );
 };
