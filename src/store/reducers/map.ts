@@ -81,6 +81,10 @@ export const loadWildfireLayerRenderer = (data:GenerateRendererResponse)=>(dispa
     }
 };
 
+export const toggleSmokeLayer = ()=>(dispatch:StoreDispatch, getState:StoreGetState)=>{
+    dispatch(smokeLayerVisibleToggled())
+}
+
 export const startSmokeLayerAnimation = ()=>(dispatch:StoreDispatch, getState:StoreGetState)=>{
     dispatch(isSmokeLayerAnimationToggled())
 
@@ -111,7 +115,11 @@ export const setStartTimeByIdx = (idx:number)=>(dispatch:StoreDispatch, getState
 const incSmokeLayerTimeExtent = ()=>(dispatch:StoreDispatch, getState:StoreGetState)=>{
 
     const { map } = getState();
-    const { smokeLayerFullTimeExtent, smokeLayerCurrentTimeExtent } = map;
+    const { smokeLayerFullTimeExtent, smokeLayerCurrentTimeExtent, smokeLayerVisible } = map;
+
+    if(!smokeLayerVisible){
+        return;
+    }
 
     const [ LayerTimeExtentStart, LayerTimeExtentEnd ] = smokeLayerFullTimeExtent;
 

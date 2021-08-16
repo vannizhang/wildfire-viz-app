@@ -14,7 +14,8 @@ import {
     // smokeLayerCurrentTimeExtentChanged,
     smokeLayerFullTimeExtentChanged,
     startSmokeLayerAnimation,
-    stopSmokeLayerAnimation
+    stopSmokeLayerAnimation,
+    isSmokeLayerAnimationSelector
 } from  '../../store/reducers/map'
 
 // import { urlFns } from 'helper-toolkit-ts';
@@ -40,6 +41,8 @@ const SmokeLayerContainer:React.FC<Props> = ({
     const dispatch = useDispatch()
 
     const isVisible = useSelector(smokeLayerVisibleSelector);
+
+    const isAnimationOn = useSelector(isSmokeLayerAnimationSelector)
 
     const fullTimeExtent = useSelector(smokeLayerFullTimeExtentSelector);
 
@@ -82,13 +85,11 @@ const SmokeLayerContainer:React.FC<Props> = ({
 
     React.useEffect(()=>{
         
-        if(isVisible && fullTimeExtent.length){
+        if(fullTimeExtent.length){
             dispatch(startSmokeLayerAnimation())
-        } else {
-            dispatch(stopSmokeLayerAnimation());
         }
 
-    }, [isVisible, fullTimeExtent]);
+    }, [fullTimeExtent]);
 
     // React.useEffect(()=>{
     //     console.log('activeTimeExtent', currTimeExtent)

@@ -2,7 +2,7 @@ import * as React from 'react';
 
 import { useDispatch, useSelector  } from 'react-redux';
 import {
-    smokeLayerVisibleToggled,
+    toggleSmokeLayer,
     smokeLayerVisibleSelector,
     smokeLayerCurrentTimeExtentSelector,
     smokeLayerFullTimeExtentSelector,
@@ -33,7 +33,7 @@ const SmokeLayerToggleContainer:React.FC = ()=>{
             isVisible={isVisible}
             isAnimationOn={isAnimationOn}
             onClick={()=>{
-                dispatch(smokeLayerVisibleToggled());
+                dispatch(toggleSmokeLayer());
             }}
             playPauseBtnOnClick={()=>{
                 if(isAnimationOn){
