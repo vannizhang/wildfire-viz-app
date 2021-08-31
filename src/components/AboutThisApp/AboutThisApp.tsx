@@ -38,7 +38,7 @@ const AboutThisApp:React.FC = ()=>{
 
                 <p>The fires source is the Integrated Reporting of Wildland-Fire Information (IRWIN) location database along with the polygon perimeters from the National Interagency Fire Center (NIFC). Both layers update every 15 minutes.</p>
 
-                <p>Smoke forecasts are disseminated by the National Weather Service and show a 48-hour forecast window in 1-hour increments. More information about this service can be found <a href='https://www.arcgis.com/home/item.html?id=a98fd08751a5480c898b7cebe38807f4' target='_blank'>here</a>.</p>
+                <p>Smoke forecasts are disseminated by the National Weather Service and show a 24-hour forecast window in 1-hour increments. More information about this service can be found <a href='https://www.arcgis.com/home/item.html?id=a98fd08751a5480c898b7cebe38807f4' target='_blank'>here</a>.</p>
 
                 <p>When zoomed-in, additional fire points will appear. These are NOAA/NASA satellite-detected locations of recent “thermal activity” that can provide an indication of fire direction. Learn more about this data <a href='https://www.arcgis.com/home/item.html?id=dece90af1a0242dcbf0ca36d30276aa3' target='_blank'>here</a>.</p>
 

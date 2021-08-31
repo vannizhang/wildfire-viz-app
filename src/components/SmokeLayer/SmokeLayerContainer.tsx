@@ -12,7 +12,7 @@ import {
     smokeLayerFullTimeExtentSelector,
     smokeLayerCurrentTimeExtentSelector,
     // smokeLayerCurrentTimeExtentChanged,
-    smokeLayerFullTimeExtentChanged,
+    loadSmokeLayerFullTimeExtent,
     startSmokeLayerAnimation,
     stopSmokeLayerAnimation,
     isSmokeLayerAnimationSelector
@@ -67,7 +67,7 @@ const SmokeLayerContainer:React.FC<Props> = ({
             if(data){
                 const { timeInfo } = data;
 
-                dispatch(smokeLayerFullTimeExtentChanged(timeInfo.timeExtent))
+                dispatch(loadSmokeLayerFullTimeExtent(timeInfo.timeExtent))
             }
 
         } catch(err){

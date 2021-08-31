@@ -50,7 +50,7 @@ const SmokeLayerToggle:React.FC<Props> = ({
 
         const indicators:JSX.Element[] = [];
 
-        for(let i = 0 ; i < 48; i++){
+        for(let i = 0 ; i < 24; i++){
 
             const classname = classnames('smoke-forecast-time-indicator', {
                 'is-active': i === idx4CurrTime

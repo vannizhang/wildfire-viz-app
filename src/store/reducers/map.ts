@@ -4,7 +4,7 @@ import {
     PayloadAction,
 } from '@reduxjs/toolkit';
 
-import { add } from 'date-fns';
+import { add, differenceInMinutes } from 'date-fns';
 
 import {
     RootState,
@@ -79,6 +79,28 @@ export const loadWildfireLayerRenderer = (data:GenerateRendererResponse)=>(dispa
     if(data){
         dispatch(wildfireLayerRendererLoaded(data));
     }
+};
+
+export const loadSmokeLayerFullTimeExtent = (timeExtent:number[])=>(dispatch:StoreDispatch, getState:StoreGetState)=>{
+
+    const now = new Date();
+
+    let [startTime, endTime] = timeExtent;
+
+    while(startTime < endTime){
+
+        const diff = differenceInMinutes(startTime, now)
+
+        if(diff >= 0 && diff < 60){
+            break;
+        }
+
+        startTime = add(new Date(startTime), { hours: 1 }).getTime();
+    }
+
+    endTime = add(new Date(startTime), { hours: 23 }).getTime()
+
+    dispatch(smokeLayerFullTimeExtentChanged([startTime, endTime]))
 };
 
 export const toggleSmokeLayer = ()=>(dispatch:StoreDispatch, getState:StoreGetState)=>{
