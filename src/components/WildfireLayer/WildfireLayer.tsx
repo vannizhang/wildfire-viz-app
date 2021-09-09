@@ -121,7 +121,7 @@ const WildfireLayer:React.FC<Props> = ({
 
             <div class='leader-half'>
                 <a href='https://news.google.com/search?q={${WildfireFeatureFields.IncidentName}} fire' class='margin-right-half' target='_blank'>News</a>
-                <a href='https://twitter.com/search?q={expression/IncidentNameNoSpace}Fire' class='margin-right-half' target='_blank'>Twitter</a>
+                <a href='https://twitter.com/search?q={expression/IncidentNameNoSpace} fire' class='margin-right-half' target='_blank'>Twitter</a>
                 <a href='https://www.facebook.com/search/top/?q={${WildfireFeatureFields.IncidentName}} fire' target='_blank'>Facebook</a>
             </div>
         `.trim().replace(/(\r\n|\n|\r)/gm, "");
