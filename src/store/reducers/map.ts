@@ -147,7 +147,7 @@ const incSmokeLayerTimeExtent = ()=>(dispatch:StoreDispatch, getState:StoreGetSt
 
     let [ startTime ] = smokeLayerCurrentTimeExtent;
 
-    startTime = startTime
+    startTime = startTime && startTime >= LayerTimeExtentStart
         ? add(new Date(startTime), { hours: 1 }).getTime() 
         : LayerTimeExtentStart;
             

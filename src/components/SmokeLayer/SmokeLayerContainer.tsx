@@ -38,7 +38,7 @@ const SmokeLayerContainer:React.FC<Props> = ({
     mapView
 })=>{
 
-    const dispatch = useDispatch()
+    const dispatch = useDispatch();
 
     const isVisible = useSelector(smokeLayerVisibleSelector);
 
@@ -48,15 +48,9 @@ const SmokeLayerContainer:React.FC<Props> = ({
 
     const currTimeExtent = useSelector(smokeLayerCurrentTimeExtentSelector);
 
-    // const [ FullTimeExtent, setFullTimeExtent ] = React.useState<number[]>();
-    
-    // const [ activeTimeExtent, setActiveTimeExtent ]= React.useState<number[]>();
+    const [timeModified4FullTimeExtent, setTimeModified4FullTimeExtent] = React.useState(Date.now());
 
-    // const animationIntervalRef = React.useRef<number>();
-
-    // const startTimeRef = React.useRef<number>();
-
-    // const TimerSpeed = 2000;
+    const intervalRef = React.useRef<number>()
 
     const getLayerInfo = async()=>{
 
@@ -76,16 +70,25 @@ const SmokeLayerContainer:React.FC<Props> = ({
     };
 
     React.useEffect(()=>{
-        getLayerInfo();
+        // getLayerInfo();
+
+        intervalRef.current = setInterval(() => setTimeModified4FullTimeExtent(Date.now()), 1000 * 60 * 60);
 
         return () => {
+            clearInterval(intervalRef.current)
             dispatch(stopSmokeLayerAnimation());
         };
     }, []);
 
     React.useEffect(()=>{
+        if(timeModified4FullTimeExtent){
+            getLayerInfo();
+        }
+    }, [timeModified4FullTimeExtent]);
+
+    React.useEffect(()=>{
         
-        if(fullTimeExtent.length){
+        if(fullTimeExtent.length && !isAnimationOn){
             dispatch(startSmokeLayerAnimation())
         }
 
