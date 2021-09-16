@@ -1,6 +1,7 @@
 import { 
     createSlice,
-    createSelector
+    createSelector,
+    PayloadAction
 } from '@reduxjs/toolkit';
 
 import {
@@ -14,6 +15,8 @@ export type ListMode = 'timeline' | 'grid';
 interface UIReducerInitialState {
     listMode: ListMode;
     searchTerm: string;
+    // last time app synced to source data, whenever this changes, we re-load the app data
+    lastSyncTime: number;
 };
 
 interface ListModeChangedAction {
@@ -30,7 +33,8 @@ const slice = createSlice({
     name: 'UI',
     initialState: {
         listMode: 'timeline',
-        searchTerm: ''
+        searchTerm: '',
+        lastSyncTime: new Date().getTime()
     } as UIReducerInitialState,
     reducers: {
         listModeChanged: (state, action:ListModeChangedAction)=>{
@@ -38,7 +42,10 @@ const slice = createSlice({
         },
         searchTermChanged: (state, action:SearchTermChangedAction)=>{
             state.searchTerm = action.payload;
-        }
+        },
+        lastSyncTimeChanged: (state, action:PayloadAction<number>)=>{
+            state.lastSyncTime = action.payload;
+        },
     }
 });
 
@@ -49,7 +56,8 @@ const {
 
 export const {
     listModeChanged,
-    searchTermChanged
+    searchTermChanged,
+    lastSyncTimeChanged
 } = actions;
 
 export const listModeSelector = createSelector(
@@ -60,6 +68,11 @@ export const listModeSelector = createSelector(
 export const searchTermSelector = createSelector(
     (state:RootState)=>state.ui.searchTerm,
     searchTerm=>searchTerm
+);
+
+export const lastSyncTimeSelector = createSelector(
+    (state:RootState)=>state.ui.lastSyncTime,
+    lastSyncTime=>lastSyncTime
 );
 
 export default reducer;

@@ -17,6 +17,7 @@ import {
     stopSmokeLayerAnimation,
     isSmokeLayerAnimationSelector
 } from  '../../store/reducers/map'
+import { lastSyncTimeSelector } from '../../store/reducers/UI';
 
 // import { urlFns } from 'helper-toolkit-ts';
 // import { HashParamKey } from '../../types';
@@ -48,9 +49,7 @@ const SmokeLayerContainer:React.FC<Props> = ({
 
     const currTimeExtent = useSelector(smokeLayerCurrentTimeExtentSelector);
 
-    const [timeModified4FullTimeExtent, setTimeModified4FullTimeExtent] = React.useState(Date.now());
-
-    const intervalRef = React.useRef<number>()
+    const lastSyncTime = useSelector(lastSyncTimeSelector);
 
     const getLayerInfo = async()=>{
 
@@ -62,6 +61,8 @@ const SmokeLayerContainer:React.FC<Props> = ({
                 const { timeInfo } = data;
 
                 dispatch(loadSmokeLayerFullTimeExtent(timeInfo.timeExtent))
+
+                console.log(`fetched smoke forecast layer info`)
             }
 
         } catch(err){
@@ -70,21 +71,15 @@ const SmokeLayerContainer:React.FC<Props> = ({
     };
 
     React.useEffect(()=>{
-        // getLayerInfo();
-
-        intervalRef.current = setInterval(() => setTimeModified4FullTimeExtent(Date.now()), 1000 * 60 * 60);
-
         return () => {
-            clearInterval(intervalRef.current)
+            // clearInterval(intervalRef.current)
             dispatch(stopSmokeLayerAnimation());
         };
     }, []);
 
     React.useEffect(()=>{
-        if(timeModified4FullTimeExtent){
-            getLayerInfo();
-        }
-    }, [timeModified4FullTimeExtent]);
+        getLayerInfo();
+    }, [lastSyncTime]);
 
     React.useEffect(()=>{
         
@@ -93,11 +88,6 @@ const SmokeLayerContainer:React.FC<Props> = ({
         }
 
     }, [fullTimeExtent]);
-
-    // React.useEffect(()=>{
-    //     console.log('activeTimeExtent', currTimeExtent)
-    //     // dispatch(smokeLayerCurrentTimeExtentChanged(activeTimeExtent));
-    // }, [currTimeExtent])
 
     return (
         <SmokeLayer 

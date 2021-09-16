@@ -21,10 +21,48 @@ import {
 import {
     MapConfig
 } from '../../AppConfig';
+import { lastSyncTimeChanged, lastSyncTimeSelector } from '../../store/reducers/UI';
+
+
+const fecthWildfires = async(definitionExpression:string): Promise<WildfireFeature[]>=>{
+
+    const { WildfiresLayerUrl } = MapConfig;
+
+    const requestUrl = `${WildfiresLayerUrl}/query?f=json&where=${definitionExpression}&outFields=*`;
+
+    try {
+        const { data } = await axios.get(requestUrl);
+        const { features } = data;
+        return features;
+
+    } catch(err){
+        console.error('failed to load wildfires', err);
+        return [];
+    }
+};
+
+const assignClassBreak2WildfireFeatures = (features: WildfireFeature[], classbreakRenderer: GenerateRendererResponse)=>{
+
+    const { classBreakInfos, field } = classbreakRenderer;
+    
+    return features.map(feature=>{
+
+        for(let i = 0, len = classBreakInfos.length; i < len; i++){
+            if(feature.attributes[field] <= classBreakInfos[i].classMaxValue){
+                feature.classBreak = i;
+                break;
+            }
+        }
+
+        return feature;
+    });
+};
 
 const AppContainer:React.FC = ()=>{
 
     const definitionExpression = useSelector(definitionExpressionSelector);
+
+    const lastSyncTime = useSelector(lastSyncTimeSelector);
 
     const dispatch = useDispatch();
 
@@ -37,10 +75,10 @@ const AppContainer:React.FC = ()=>{
             where: definitionExpression,
             classificationField: WildfireLayerClassificationField,
         });
-        console.log(classbreakRenderer);
+        // console.log(classbreakRenderer);
 
-        const wildfires = await fecthWildfires();
-        console.log(wildfires);
+        const wildfires = await fecthWildfires(definitionExpression);
+        // console.log(wildfires);
 
         const formattedWildfires = assignClassBreak2WildfireFeatures(wildfires, classbreakRenderer);
         // console.log(formattedWildfires);
@@ -50,42 +88,15 @@ const AppContainer:React.FC = ()=>{
         dispatch(loadWildfires(formattedWildfires));
     }
 
-    const fecthWildfires = async(): Promise<WildfireFeature[]>=>{
-
-        const { WildfiresLayerUrl } = MapConfig;
-
-        const requestUrl = `${WildfiresLayerUrl}/query?f=json&where=${definitionExpression}&outFields=*`;
-    
-        try {
-            const { data } = await axios.get(requestUrl);
-            const { features } = data;
-            return features;
-
-        } catch(err){
-            console.error('failed to load wildfires', err);
-            return [];
-        }
-    };
-
-    const assignClassBreak2WildfireFeatures = (features: WildfireFeature[], classbreakRenderer: GenerateRendererResponse)=>{
-
-        const { classBreakInfos, field } = classbreakRenderer;
-        
-        return features.map(feature=>{
-
-            for(let i = 0, len = classBreakInfos.length; i < len; i++){
-                if(feature.attributes[field] <= classBreakInfos[i].classMaxValue){
-                    feature.classBreak = i;
-                    break;
-                }
-            }
-
-            return feature;
-        });
-    };
-
     React.useEffect(()=>{
         initApp();
+    }, [lastSyncTime]);
+
+    React.useEffect(()=>{
+        // console.log(new Date())
+        setInterval(()=>{
+            dispatch(lastSyncTimeChanged(new Date().getTime()))
+        }, 1000 * 60 * 60)
     }, []);
 
     return (
