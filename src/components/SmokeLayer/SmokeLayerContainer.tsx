@@ -54,7 +54,7 @@ const SmokeLayerContainer:React.FC<Props> = ({
     const getLayerInfo = async()=>{
 
         try {
-            const requestUrl = `${LAYER_URL}/0?f=json`
+            const requestUrl = `${LAYER_URL}?f=json`
             const { data }: {data: LayerInfo} = await axios.get(requestUrl);
 
             if(data){

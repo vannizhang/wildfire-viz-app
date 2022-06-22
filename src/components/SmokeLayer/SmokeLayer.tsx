@@ -20,39 +20,30 @@ const SmokeLayer:React.FC<Props> = ({
     mapView
 })=>{
 
-    const [ smokeLayer, setSmokeLayer ] = React.useState<IMapImageLayer>();
+    const [ smokeLayer, setSmokeLayer ] = React.useState<IFeatureLayer>();
 
     const init = async()=>{
 
         try {
             type Modules = [
-                typeof IMapImageLayer,
+                // typeof IMapImageLayer,
                 typeof IFeatureLayer,
-                typeof ITimeExtent
+                // typeof ITimeExtent
             ]; 
     
             const [
-                MapImageLayer,
+                // MapImageLayer,
                 FeatureLayer,
-                TimeExtent,
+                // TimeExtent,
             ] = await (loadModules([
-                'esri/layers/MapImageLayer',
+                // 'esri/layers/MapImageLayer',
                 'esri/layers/FeatureLayer',
-                'esri/TimeExtent'
+                // 'esri/TimeExtent'
             ]) as Promise<Modules>);
-
-            // const timeExtent = new TimeExtent({
-            //     start: new Date(1589616000000),
-            //     end: new Date(1589619600000)
-            // });
-
-            // console.log(timeExtent)
     
-            const smokeLayer = new MapImageLayer({
+            const smokeLayer = new FeatureLayer({
                 url,
                 visible,
-                // timeExtent,
-                useViewTime: false,
                 opacity: 1,
                 effect: "invert() blur(5px) drop-shadow(10px, 10px, 20px, black) opacity(0.5)"
             } as any);
@@ -80,7 +71,7 @@ const SmokeLayer:React.FC<Props> = ({
 
         const [ startTime, endTime ] = timeExtent;
 
-        smokeLayer.timeExtent = new TimeExtent({
+        mapView.timeExtent = new TimeExtent({
             start: new Date(startTime),
             end: new Date(endTime)
         });

@@ -21,7 +21,7 @@ import {
 // } = urlFns.parseHash();
 
 let interval4smokeLayerAnimation: number;
-const SmokeLayerAnimationSpeed = 2000;
+const SmokeLayerAnimationSpeed = 3000;
 
 interface MapReducerInitialState {
     wildfireLayerClassbreakRenderer: GenerateRendererResponse;

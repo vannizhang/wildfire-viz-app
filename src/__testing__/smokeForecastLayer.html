@@ -1,0 +1,104 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>Intro to FeatureLayer | Sample | ArcGIS API for JavaScript 4.23</title>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.23/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.23/"></script>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+
+
+      #timeExtBtn{
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: #000;
+        color: aliceblue;
+        padding: .5rem;
+      }
+    </style>
+
+    <script>
+        require([
+            "esri/Map", 
+            "esri/views/MapView", 
+            "esri/layers/FeatureLayer",
+            "esri/TimeExtent"
+        ], (Map, MapView, FeatureLayer, TimeExtent) => {
+
+            const msPerHour = 60 * 60 * 1000
+            let currStart = 1655884800000
+
+            const map = new Map({
+                basemap: "hybrid"
+            });
+
+            const view = new MapView({
+                container: "viewDiv",
+                map,
+                center: [-90, 40],
+                zoom: 5
+            });
+
+            /********************
+             * Add feature layer
+             ********************/
+
+            // Carbon storage of trees in Warren Wilson College.
+            const featureLayer = new FeatureLayer({
+                url: "https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/NDGD_SmokeForecast_v1/FeatureServer/0",
+                // useViewTime: false
+            });
+
+            map.add(featureLayer);
+
+            const timeExtents = [
+                [1655884800000,1655888400000],
+                [1655888401000,1655892000000],
+                [1655892001000,1655895600000],
+                [1655895601000,1655899200000],
+                [1655899201000,1655902800000]
+            ]
+
+            let timeExtentIdx = 0;
+
+            document.getElementById('timeExtBtn').addEventListener('click', evt=>{
+
+                const [ start, end ] = timeExtents[timeExtentIdx % timeExtents.length]
+                console.log(start, end)
+
+                const newTimeExt = new TimeExtent({
+                    start: new Date(start),
+                    end: new Date(end)
+                })
+
+                view.timeExtent = {
+                    start: new Date(start),
+                    end: new Date(end)
+                };
+
+                timeExtentIdx++
+
+                // currStart += msPerHour
+
+                // featureLayer.refresh()
+            })
+        });
+    </script>
+  </head>
+
+  <body>
+    <div id="viewDiv"></div>
+    <div id="timeExtBtn">change time extent</div>
+  </body>
+</html>

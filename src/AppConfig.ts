@@ -9,8 +9,8 @@ export const MapConfig = {
 
     'WildfireLayerClassificationField': 'DailyAcres',
 
-    // 'SmokeLayerUrl': 'https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/NDGD_SmokeForecast_v1/FeatureServer/0'
-    'SmokeLayerUrl': 'https://utility.arcgis.com/usrsvcs/servers/1bb73533826544d1a2c47475c2ae5aee/rest/services/LiveFeeds/NDGD_SmokeForecast/MapServer'
+    'SmokeLayerUrl': 'https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/NDGD_SmokeForecast_v1/FeatureServer/0'
+    // 'SmokeLayerUrl': 'https://utility.arcgis.com/usrsvcs/servers/1bb73533826544d1a2c47475c2ae5aee/rest/services/LiveFeeds/NDGD_SmokeForecast/MapServer'
 };
 
 export const UIConfig = {

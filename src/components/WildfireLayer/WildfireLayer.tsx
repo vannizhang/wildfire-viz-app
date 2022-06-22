@@ -80,7 +80,8 @@ const WildfireLayer:React.FC<Props> = ({
             renderer: rendererForeground,
             popupTemplate,
             labelingInfo: [ labelClass ],
-            outFields: ['*']
+            outFields: ['*'],
+            useViewTime: false
         });
 
         const wildfireBackgroundLayer = new FeatureLayer({
@@ -88,7 +89,8 @@ const WildfireLayer:React.FC<Props> = ({
             definitionExpression,
             renderer: rendererBackground,
             labelsVisible: false,
-            popupEnabled: false
+            popupEnabled: false,
+            useViewTime: false
         });
 
         mapView.map.addMany([ wildfireBackgroundLayer, wildfireLayer ]);
