@@ -4,9 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "webpack-dev-server --mode development --open",
-    "dev": "webpack --mode development",
-    "build": "webpack --mode production"
+    "start": "export NODE_OPTIONS=--openssl-legacy-provider && webpack-dev-server --mode development --open",
+    "dev": "export NODE_OPTIONS=--openssl-legacy-provider && webpack --mode development",
+    "build": "export NODE_OPTIONS=--openssl-legacy-provider && webpack --mode production"
   },
   "repository": {
     "type": "git",
