@@ -48,7 +48,10 @@ const assignClassBreak2WildfireFeatures = (features: WildfireFeature[], classbre
     return features.map(feature=>{
 
         for(let i = 0, len = classBreakInfos.length; i < len; i++){
-            if(feature.attributes[field] <= classBreakInfos[i].classMaxValue){
+
+            const value = feature.attributes[field]
+
+            if(value <= classBreakInfos[i].classMaxValue){
                 feature.classBreak = i;
                 break;
             }

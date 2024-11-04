@@ -15,11 +15,10 @@ import {
 } from '../../store/reducers/UI';
 
 import {
-    TimeLine,
     GridList
 } from '..';
 
-import { TimelineDataItem } from '../Timeline/Timeline';
+import { TimelineDataItem, TimeLine } from '../Timeline/Timeline';
 
 const ListViewContainer:React.FC = ()=>{
 

@@ -75,6 +75,7 @@ export interface WildfireFeature {
         PrimaryFuelModel: string;
         IsValid: number;
         IncidentTypeKind: string;
+        [key:string]: any;
     },
     geometry: {
         x: number;
@@ -150,7 +151,7 @@ const {
     feature2OpenPopupChanged
 } = slice.actions;
 
-let delayforOpenPopup:number;
+let delayforOpenPopup:any = null;
 
 export const loadWildfires = (features: WildfireFeature[])=>(dispatch:StoreDispatch, getState:StoreGetState)=>{
     if(features){

@@ -7,7 +7,9 @@ import { miscFns } from 'helper-toolkit-ts';
 
 const isMobile = miscFns.isMobileDevice();
 
-const Sidebar:React.FC = ({
+const Sidebar:React.FC<{
+    children: React.ReactNode
+}> = ({
     children
 })=>{
 

@@ -21,7 +21,7 @@ interface Props {
         bottom?: number;
     };
     initialMapCenterLocation?: CenterLoaction;
-
+    children?: React.ReactNode;
     onStationary: (data:CenterLoaction)=>void;
 };
 

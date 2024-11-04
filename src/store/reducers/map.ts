@@ -20,7 +20,7 @@ import {
 //     [key in HashParamKey]: string
 // } = urlFns.parseHash();
 
-let interval4smokeLayerAnimation: number;
+let interval4smokeLayerAnimation:any = null;
 const SmokeLayerAnimationSpeed = 3000;
 
 interface MapReducerInitialState {

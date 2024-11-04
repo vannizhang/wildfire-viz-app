@@ -1,8 +1,8 @@
 const path = require('path');
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
-const TerserPlugin = require('terser-webpack-plugin');
-const OptimizeCSSAssets = require('optimize-css-assets-webpack-plugin');
+// const TerserPlugin = require('terser-webpack-plugin');
+// const OptimizeCSSAssets = require('optimize-css-assets-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
 module.exports =  (env, options)=> {
@@ -34,37 +34,27 @@ module.exports =  (env, options)=> {
                             loader: "css-loader", options: {
                                 sourceMap: true
                             }
-                        }, {
-                            loader: 'resolve-url-loader',
-                        }, {
+                        }, 
+                        // {
+                        //     loader: 'resolve-url-loader',
+                        // }, 
+                        {
                             loader: "sass-loader", options: {
                                 sourceMap: true
                             }
                         }
                     ]
                 },
-                { test: /\.woff$/, loader: "url-loader?limit=10000&mimetype=application/font-woff" },
-                { test: /\.ttf$/,  loader: "url-loader?limit=10000&mimetype=application/octet-stream" },
+                { test: /\.woff$/, loader: "file-loader" },
+                { test: /\.ttf$/,  loader: "file-loader" },
                 { test: /\.eot$/,  loader: "file-loader" },
                 { 
                     test: /\.svg$/,  
-                    loader: "url-loader",
-                    options: {
-                        limit: 10000,
-                        fallback: {
-                            loader: "file-loader"
-                        }
-                    }
+                    loader: "file-loader"
                 },
                 {   
                     test: /\.(png|jpg|gif)$/,  
-                    loader: "url-loader",
-                    options: {
-                        limit: 10000,
-                        fallback: {
-                            loader: "file-loader"
-                        }
-                    }
+                    loader: "file-loader"
                 },
             ]
         },
@@ -111,15 +101,15 @@ module.exports =  (env, options)=> {
                 }
             },
             minimizer: [
-                new TerserPlugin({
-                    extractComments: true,
-                    terserOptions: {
-                        compress: {
-                            drop_console: true,
-                        }
-                    }
-                }), 
-                new OptimizeCSSAssets({})
+                // new TerserPlugin({
+                //     extractComments: true,
+                //     terserOptions: {
+                //         compress: {
+                //             drop_console: true,
+                //         }
+                //     }
+                // }), 
+                // new OptimizeCSSAssets({})
             ]
         },
     }

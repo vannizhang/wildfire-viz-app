@@ -8,7 +8,7 @@ export { default as WildfireLayer } from './WildfireLayer/WildfireLayerContainer
 
 export { default as SmokeLayer } from './SmokeLayer/SmokeLayerContainer';
 
-export { default as TimeLine } from './TimeLine/TimeLine';
+// export { TimeLine } from './Timeline/Timeline';
 
 export { default as GridList } from './GridList/GridList';
 

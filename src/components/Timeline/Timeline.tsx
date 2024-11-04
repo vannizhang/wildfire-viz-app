@@ -70,7 +70,7 @@ const MonthTitle = styled.div`
     text-align: center;
 `;
 
-const Timeline:React.FC<Props> = ({
+export const TimeLine:React.FC<Props> = ({
     data,
     onClick,
     onHoverHandler
@@ -153,4 +153,4 @@ const Timeline:React.FC<Props> = ({
     );
 };
 
-export default Timeline;
+// export default Timeline;
