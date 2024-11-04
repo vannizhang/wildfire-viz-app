@@ -60,7 +60,7 @@ const MapViewContainer: React.FC = ()=>{
             initialMapCenterLocation={parseMapCenterLocationFromUrl()}
             onStationary={saveMapCenterLocationInUrl}
         >
-            <SmokeLayer />
+            {/* <SmokeLayer /> */}
             <WildfireLayer/>
         </MapView>
     )

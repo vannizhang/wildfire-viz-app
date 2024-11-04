@@ -41,7 +41,7 @@
     "webpack-dev-server": "^5.1.0"
   },
   "dependencies": {
-    "@reduxjs/toolkit": "^1.5.1",
+    "@reduxjs/toolkit": "^1.9.5",
     "@types/arcgis-js-api": "4.27",
     "@types/react-redux": "^7.1.34",
     "@types/styled-components": "^5.1.34",

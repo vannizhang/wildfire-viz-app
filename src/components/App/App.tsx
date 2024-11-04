@@ -28,7 +28,7 @@ const App:React.FC = ()=>{
 
                 <Legend />
 
-                <SmokeLayerToggle />
+                {/* <SmokeLayerToggle /> */}
 
                 <ListModeToggle />
 

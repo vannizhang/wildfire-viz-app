@@ -6,6 +6,8 @@ import IWebMap from "esri/WebMap";
 import IwatchUtils from 'esri/core/watchUtils';
 import IFeatureLayer from 'esri/layers/FeatureLayer'
 
+loadCss();
+
 export interface CenterLoaction {
     lat: number;
     lon: number;
@@ -124,7 +126,6 @@ const MapView:React.FC<Props> = ({
     }
 
     React.useEffect(()=>{
-        loadCss();
         initMapView();
     }, []);
 

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useDispatch, useSelector  } from 'react-redux';
-import axios from 'axios';
+// import axios from 'axios';
 import App from './App';
 
 import {
@@ -31,7 +31,10 @@ const fecthWildfires = async(definitionExpression:string): Promise<WildfireFeatu
     const requestUrl = `${WildfiresLayerUrl}/query?f=json&where=${definitionExpression}&outFields=*`;
 
     try {
-        const { data } = await axios.get(requestUrl);
+        const res = await fetch(requestUrl);
+
+        const data = await res.json();
+
         const { features } = data;
         return features;
 
