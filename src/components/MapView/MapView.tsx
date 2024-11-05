@@ -6,7 +6,7 @@ import IWebMap from "esri/WebMap";
 import IwatchUtils from 'esri/core/watchUtils';
 import IFeatureLayer from 'esri/layers/FeatureLayer'
 
-loadCss();
+// loadCss();
 
 export interface CenterLoaction {
     lat: number;
