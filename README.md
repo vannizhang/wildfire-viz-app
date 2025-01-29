@@ -1,3 +1,5 @@
+## This app has been retired. Please use the [Wildfire Aware App](https://livingatlas.arcgis.com/wildfireaware/) developed by the Living Atlas team instead.
+
 ## Wildfire Viz App
 
 This app presents active wildfires in the United States. The source for the locations is Integrated Reporting of Wildland-Fire Information (IRWIN) location database along with the polygon perimeters from the National Interagency Fire Center (NIFC). Both layers update every 15 minutes. .
